@@ -77,16 +77,6 @@ class BluetoothManager:
         if not self.is_device_connected():
             self.attempt_connect()
 
-        managers = [BluetoothManager(device) for device in get_permitted_devices()]
-
-        bus.add_signal_receiver(
-            lambda *args, **kwargs: [manager.on_properties_changed(*args, **kwargs) for manager in managers],
-            dbus_interface="org.freedesktop.DBus.Properties",
-            signal_name="PropertiesChanged",
-            arg0="org.bluez.MediaPlayer1",
-            path_keyword="path"
-        )
-
         bus.add_signal_receiver(self.on_device_discovered,
                                      dbus_interface="org.freedesktop.DBus.ObjectManager",
                                      signal_name="InterfacesAdded")
@@ -105,6 +95,17 @@ if __name__ == "__main__":
     print("Permitted Devices:")
     for device in devices:
         print(f"Device: {device['name']} ({device['mac_address']}) device_path: {device['device_path']}")
+
+
+    managers = [BluetoothManager(device) for device in devices]
+
+    bus.add_signal_receiver(
+        lambda *args, **kwargs: [manager.on_properties_changed(*args, **kwargs) for manager in managers],
+        dbus_interface="org.freedesktop.DBus.Properties",
+        signal_name="PropertiesChanged",
+        arg0="org.bluez.MediaPlayer1",
+        path_keyword="path"
+    )
 
     threads = []
     for device in devices:
