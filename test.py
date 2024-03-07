@@ -80,3 +80,6 @@ def main():
         loop.run()
     except KeyboardInterrupt:
         loop.quit()
+
+if __name__ == "__main__":
+    main()
