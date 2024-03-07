@@ -8,7 +8,6 @@ import threading
 import threading
 
 DBusGMainLoop(set_as_default=True)
-bus = dbus.SystemBus()
 bluez_hci0_path = "/org/bluez/hci0/"
 
 def get_permitted_devices():
@@ -101,6 +100,11 @@ class BluetoothManager:
 
 if __name__ == "__main__":
     devices = get_permitted_devices()
+
+    print("Permitted Devices:")
+    for device in devices:
+        print(f"Device: {device['name']} ({device['mac_address']})")
+
     threads = []
     for device in devices:
         bluetooth_manager = BluetoothManager(device)
