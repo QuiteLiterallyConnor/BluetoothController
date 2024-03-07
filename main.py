@@ -5,6 +5,7 @@ import datetime
 import json
 import os
 import threading
+import threading
 
 DBusGMainLoop(set_as_default=True)
 bus = dbus.SystemBus()
@@ -96,6 +97,13 @@ class BluetoothManager:
             loop.quit()
 
 if __name__ == "__main__":
-    for device in get_permitted_devices():
+    devices = get_permitted_devices()
+    threads = []
+    for device in devices:
         bluetooth_manager = BluetoothManager(device)
-        bluetooth_manager.main()
+        thread = threading.Thread(target=bluetooth_manager.main)
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
