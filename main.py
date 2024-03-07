@@ -79,7 +79,7 @@ class BluetoothManager:
             return False
 
     def main(self):
-        if not is_device_connected():
+        if not self.is_device_connected():
             self.attempt_connect()
 
         self.bus.add_signal_receiver(self.on_properties_changed,
