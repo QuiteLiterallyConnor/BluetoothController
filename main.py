@@ -32,7 +32,9 @@ class BluetoothManager:
         self.device_path = device["device_path"]
 
     def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
-        # Check if the signal is for this device
+        if path != self.device_path:
+            return
+
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         for property_name, value in changed_properties.items():
             if property_name == "Volume":
@@ -99,7 +101,7 @@ if __name__ == "__main__":
     managers = [BluetoothManager(device) for device in devices]
 
     bus.add_signal_receiver(
-        lambda *args, **kwargs: [manager.on_properties_changed(*args, **kwargs) for manager in managers],
+        lambda *args, **kwargs: [manager.on_properties_changed(*args, **kwargs) for manager in managers if kwargs.get('path') == manager.device_path],
         dbus_interface="org.freedesktop.DBus.Properties",
         signal_name="PropertiesChanged",
         arg0="org.bluez.MediaPlayer1",
