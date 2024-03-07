@@ -53,18 +53,18 @@ class BluetoothManager:
     def on_device_discovered(self, object_path, interfaces_added):
         if self.device_address in object_path:
             print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {self.device_name} Device detected in range: {self.device_address}")
-            GLib.idle_add(self.attempt_reconnect)
+            GLib.idle_add(self.attempt_connect)
 
-    def attempt_reconnect(self):
+    def attempt_connect(self):
         if not self.is_device_connected():
-            print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {self.device_name} Attempting to reconnect to {self.device_address}")
+            print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {self.device_name} Attempting to connect to {self.device_address}")
             try:
                 device_proxy = self.bus.get_object("org.bluez", self.device_path)
                 device_interface = dbus.Interface(device_proxy, "org.bluez.Device1")
                 device_interface.Connect()
-                print("Reconnected successfully.")
+                print("Connected successfully.")
             except dbus.exceptions.DBusException as e:
-                print(f"Reconnection failed: {e}")
+                print(f"Connection failed: {e}")
         else:
                 print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {self.device_name} ({self.device_address}) is already connected.")
         return False
@@ -79,6 +79,9 @@ class BluetoothManager:
             return False
 
     def main(self):
+        if not is_device_connected():
+            self.attempt_connect()
+
         self.bus.add_signal_receiver(self.on_properties_changed,
                                      dbus_interface="org.freedesktop.DBus.Properties",
                                      signal_name="PropertiesChanged",
