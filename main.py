@@ -32,16 +32,18 @@ class BluetoothManager:
         self.device_path = device["device_path"]
 
     def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        for property_name, value in changed_properties.items():
-            if property_name == "Volume":
-                print(f"[{timestamp}] Volume Changed: {value}")
-            elif property_name == "Status":
-                print(f"[{timestamp}] Playback Status Changed: {value}")
-            elif property_name == "Track":
-                title = value.get('Title', 'Unknown Title')
-                artist = value.get('Artist', 'Unknown Artist')
-                print(f"[{timestamp}] Now Playing: {title} by {artist}")
+        # Check if the signal is for this device
+        if path == self.device_path:
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            for property_name, value in changed_properties.items():
+                if property_name == "Volume":
+                    print(f"[{timestamp}] Volume Changed: {value}")
+                elif property_name == "Status":
+                    print(f"[{timestamp}] Playback Status Changed: {value}")
+                elif property_name == "Track":
+                    title = value.get('Title', 'Unknown Title')
+                    artist = value.get('Artist', 'Unknown Artist')
+                    print(f"[{timestamp}] Now Playing: {title} by {artist}")
 
     def on_device_discovered(self, object_path, interfaces_added):
         if self.device_address in object_path:
@@ -75,11 +77,15 @@ class BluetoothManager:
         if not self.is_device_connected():
             self.attempt_connect()
 
-        bus.add_signal_receiver(self.on_properties_changed,
-                            dbus_interface="org.freedesktop.DBus.Properties",
-                            signal_name="PropertiesChanged",
-                            path_keyword="path")
+        managers = [BluetoothManager(device) for device in get_permitted_devices()]
 
+        bus.add_signal_receiver(
+            lambda *args, **kwargs: [manager.on_properties_changed(*args, **kwargs) for manager in managers],
+            dbus_interface="org.freedesktop.DBus.Properties",
+            signal_name="PropertiesChanged",
+            arg0="org.bluez.MediaPlayer1",
+            path_keyword="path"
+        )
 
         bus.add_signal_receiver(self.on_device_discovered,
                                      dbus_interface="org.freedesktop.DBus.ObjectManager",
