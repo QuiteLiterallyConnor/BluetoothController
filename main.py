@@ -25,23 +25,23 @@ def get_permitted_devices():
 
     return devices
 
-def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    for property_name, value in changed_properties.items():
-        if property_name == "Volume":
-            print(f"[{timestamp}] Volume Changed: {value}")
-        elif property_name == "Status":
-            print(f"[{timestamp}] Playback Status Changed: {value}")
-        elif property_name == "Track":
-            title = value.get('Title', 'Unknown Title')
-            artist = value.get('Artist', 'Unknown Artist')
-            print(f"[{timestamp}] Now Playing: {title} by {artist}")
-
 class BluetoothManager:
     def __init__(self, device):
         self.device_name = device["name"]
         self.device_address = device["mac_address"]
         self.device_path = device["device_path"]
+
+    def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        for property_name, value in changed_properties.items():
+            if property_name == "Volume":
+                print(f"[{timestamp}] Volume Changed: {value}")
+            elif property_name == "Status":
+                print(f"[{timestamp}] Playback Status Changed: {value}")
+            elif property_name == "Track":
+                title = value.get('Title', 'Unknown Title')
+                artist = value.get('Artist', 'Unknown Artist')
+                print(f"[{timestamp}] Now Playing: {title} by {artist}")
 
     def on_device_discovered(self, object_path, interfaces_added):
         if self.device_address in object_path:
