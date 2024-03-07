@@ -81,11 +81,6 @@ class BluetoothManager:
         if not self.is_device_connected():
             self.attempt_connect()
 
-        self.bus.add_signal_receiver(self.on_properties_changed,
-                                     dbus_interface="org.freedesktop.DBus.Properties",
-                                     signal_name="PropertiesChanged",
-                                     path_keyword="path")
-
         self.bus.add_signal_receiver(self.on_device_discovered,
                                      dbus_interface="org.freedesktop.DBus.ObjectManager",
                                      signal_name="InterfacesAdded")
@@ -104,6 +99,11 @@ if __name__ == "__main__":
     print("Permitted Devices:")
     for device in devices:
         print(f"Device: {device['name']} ({device['mac_address']}) device_path: {device['device_path']}")
+
+    self.bus.add_signal_receiver(self.on_properties_changed,
+                                dbus_interface="org.freedesktop.DBus.Properties",
+                                signal_name="PropertiesChanged",
+                                path_keyword="path")
 
     threads = []
     for device in devices:
