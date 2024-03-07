@@ -24,29 +24,29 @@ def get_permitted_devices():
 
     return devices
 
-def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    for property_name, value in changed_properties.items():
-        if property_name == "Volume":
-            print(f"[{timestamp}] Volume Changed: {value}")
-        elif property_name == "Status":
-            print(f"[{timestamp}] Playback Status Changed: {value}")
-        elif property_name == "Track":
-            title = value.get('Title', 'Unknown Title')
-            artist = value.get('Artist', 'Unknown Artist')
-            print(f"[{timestamp}] Now Playing: {title} by {artist}")
-
-    if "Connected" in changed_properties:
-        connected = changed_properties["Connected"]
-        status = "connected" if connected else "disconnected"
-        print(f"[{timestamp}] {self.device_name} {status}: {self.device_address}")
-
 class BluetoothManager:
     def __init__(self, device):
         self.bus = dbus.SystemBus()
         self.device_name = device["name"]
         self.device_address = device["mac_address"]
         self.device_path = device["device_path"]
+
+    def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        for property_name, value in changed_properties.items():
+            if property_name == "Volume":
+                print(f"[{timestamp}] Volume Changed: {value}")
+            elif property_name == "Status":
+                print(f"[{timestamp}] Playback Status Changed: {value}")
+            elif property_name == "Track":
+                title = value.get('Title', 'Unknown Title')
+                artist = value.get('Artist', 'Unknown Artist')
+                print(f"[{timestamp}] Now Playing: {title} by {artist}")
+
+        if "Connected" in changed_properties:
+            connected = changed_properties["Connected"]
+            status = "connected" if connected else "disconnected"
+            print(f"[{timestamp}] {self.device_name} {status}: {self.device_address}")
 
 
     def on_device_discovered(self, object_path, interfaces_added):
@@ -81,7 +81,7 @@ class BluetoothManager:
         if not self.is_device_connected():
             self.attempt_connect()
 
-        self.bus.add_signal_receiver(on_properties_changed,
+        self.bus.add_signal_receiver(self.on_properties_changed,
                                      dbus_interface="org.freedesktop.DBus.Properties",
                                      signal_name="PropertiesChanged",
                                      path_keyword="path")
