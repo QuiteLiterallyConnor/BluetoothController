@@ -61,7 +61,7 @@ def is_device_connected():
         print(f"Error checking device connection status: {e}")
         return False
 
-if __name__ == "__main__":
+def main():
     # Listen for property changes globally but apply logic specifically
     bus.add_signal_receiver(on_properties_changed,
                             dbus_interface="org.freedesktop.DBus.Properties",
