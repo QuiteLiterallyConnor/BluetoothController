@@ -15,12 +15,22 @@ device_path = f"/org/bluez/hci0/dev_{DEVICE_MAC.replace(':', '_')}"
 def on_properties_changed(interface, changed_properties, invalidated_properties, path=None):
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    # Ensure that the change is for the device of interest
-    if device_path in path:
-        for property_name, value in changed_properties.items():
-            # Filter out the properties of interest and print them
-            if property_name in ["Volume", "Status", "Track"]:
-                print(f"[{timestamp}] {property_name} Changed: {value} on {path}")
+    # Print any property changes
+    for property_name, value in changed_properties.items():
+        if property_name == "Volume":
+            print(f"[{timestamp}] Volume Changed: {value} on path: {path}")
+        elif property_name == "Status":
+            print(f"[{timestamp}] Playback Status Changed: {value}")
+        elif property_name == "Track":
+            title = value.get('Title', 'Unknown Title')
+            artist = value.get('Artist', 'Unknown Artist')
+            print(f"[{timestamp}] Now Playing: {title} by {artist}")
+
+    # Handle connection status changes
+    if "Connected" in changed_properties:
+        connected = changed_properties["Connected"]
+        status = "connected" if connected else "disconnected"
+        print(f"[{timestamp}] Device {status}: {path}")
 
 def on_device_discovered(object_path, interfaces_added):
     if DEVICE_MAC in object_path:
