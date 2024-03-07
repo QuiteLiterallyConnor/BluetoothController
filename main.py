@@ -20,7 +20,7 @@ def get_permitted_devices():
     for device in devices:
         if "mac_address" not in device or "name" not in device:
             raise ValueError("Each device in permitted_devices.json must have a mac_address and name.")
-        device["device_path"] = f"{bluez_hci0_path}dev_{device["mac_address"].replace(':', '_')}"
+        device["device_path"] = f"{bluez_hci0_path}dev_{device['mac_address'].replace(':', '_')}"
 
     return devices
 
