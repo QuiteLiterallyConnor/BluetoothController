@@ -9,6 +9,7 @@ import threading
 
 DBusGMainLoop(set_as_default=True)
 bluez_hci0_path = "/org/bluez/hci0/"
+bus = dbus.SystemBus()
 
 def get_permitted_devices():
     permitted_devices_file = "permitted_devices.json"
@@ -38,7 +39,6 @@ def on_properties_changed(self, interface, changed_properties, invalidated_prope
 
 class BluetoothManager:
     def __init__(self, device):
-        self.bus = dbus.SystemBus()
         self.device_name = device["name"]
         self.device_address = device["mac_address"]
         self.device_path = device["device_path"]
@@ -52,7 +52,7 @@ class BluetoothManager:
         if not self.is_device_connected():
             print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {self.device_name} Attempting to connect to {self.device_address}")
             try:
-                device_proxy = self.bus.get_object("org.bluez", self.device_path)
+                device_proxy = bus.get_object("org.bluez", self.device_path)
                 device_interface = dbus.Interface(device_proxy, "org.bluez.Device1")
                 device_interface.Connect()
                 print("Connected successfully.")
@@ -64,7 +64,7 @@ class BluetoothManager:
 
     def is_device_connected(self):
         try:
-            device_proxy = self.bus.get_object("org.bluez", self.device_path)
+            device_proxy = bus.get_object("org.bluez", self.device_path)
             device_properties = dbus.Interface(device_proxy, dbus.PROPERTIES_IFACE)
             return device_properties.Get("org.bluez.Device1", "Connected")
         except dbus.DBusException as e:
@@ -75,7 +75,7 @@ class BluetoothManager:
         if not self.is_device_connected():
             self.attempt_connect()
 
-        self.bus.add_signal_receiver(self.on_device_discovered,
+        bus.add_signal_receiver(self.on_device_discovered,
                                      dbus_interface="org.freedesktop.DBus.ObjectManager",
                                      signal_name="InterfacesAdded")
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     for device in devices:
         print(f"Device: {device['name']} ({device['mac_address']}) device_path: {device['device_path']}")
 
-    self.bus.add_signal_receiver(on_properties_changed,
+    bus.add_signal_receiver(on_properties_changed,
                                 dbus_interface="org.freedesktop.DBus.Properties",
                                 signal_name="PropertiesChanged",
                                 path_keyword="path")
