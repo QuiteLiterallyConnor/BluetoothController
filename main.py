@@ -34,8 +34,11 @@ class BluetoothManager:
     def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+        print(f"on_properties_changed: {interface}, {changed_properties}, {invalidated_properties}, {path}")
+
         for property_name, value in changed_properties.items():
             if property_name == "Volume":
+                print("volume called")
                 print(f"[{timestamp}] {self.device_name} Volume Changed: {value}")
             elif property_name == "Status":
                 print(f"[{timestamp}] {self.device_name} Playback Status Changed: {value}")
