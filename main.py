@@ -31,7 +31,7 @@ class BluetoothManager:
         self.device_address = device["mac_address"]
         self.device_path = device["device_path"]
 
-    def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
+    def on_properties_changed(self, interface, changed_properties, invalidated_properties):
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         for property_name, value in changed_properties.items():
@@ -47,7 +47,7 @@ class BluetoothManager:
         if "Connected" in changed_properties:
             connected = changed_properties["Connected"]
             status = "connected" if connected else "disconnected"
-            print(f"[{timestamp}] {self.device_name} {status}: {path}")
+            print(f"[{timestamp}] {self.device_name} {status}: {self.device_path}")
 
     def on_device_discovered(self, object_path, interfaces_added):
         if self.device_address in object_path:
