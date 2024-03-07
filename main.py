@@ -31,7 +31,7 @@ class BluetoothManager:
         self.device_address = device["mac_address"]
         self.device_path = device["device_path"]
 
-    def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
+    def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None, **kwargs):
         print(kwargs)
         if path != self.device_path:
             return
