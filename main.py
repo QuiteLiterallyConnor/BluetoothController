@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     print("Permitted Devices:")
     for device in devices:
-        print(f"Device: {device['name']} ({device['mac_address']})")
+        print(f"Device: {device['name']} ({device['mac_address']}) device_path: {device['device_path']}")
 
     threads = []
     for device in devices:
