@@ -36,7 +36,7 @@ class BluetoothManager:
 
         for property_name, value in changed_properties.items():
             if property_name == "Volume":
-                print(f"[{timestamp}] {self.device_name} Volume Changed: {value} on path: {path}")
+                print(f"[{timestamp}] {self.device_name} Volume Changed: {value}")
             elif property_name == "Status":
                 print(f"[{timestamp}] {self.device_name} Playback Status Changed: {value}")
             elif property_name == "Track":
