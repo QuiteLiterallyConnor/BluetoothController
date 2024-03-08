@@ -5,22 +5,32 @@ import datetime
 import json
 import os
 import threading
+import argparse
+import asyncio
 
 DBusGMainLoop(set_as_default=True)
 bus = dbus.SystemBus()
 bluez_hci0_path = "/org/bluez/hci0/"
 
-def get_permitted_devices():
-    permitted_devices_file = "permitted_devices.json"
-    if not os.path.exists(permitted_devices_file):
-        raise FileNotFoundError("permitted_devices.json does not exist. Please create it from the template file.")
-    with open(permitted_devices_file, "r") as file:
-        devices = json.load(file)
+def get_devices():
+    parser = argparse.ArgumentParser(description='Permitted Bluetooth Devices')
+    parser.add_argument('--name', type=str, help='Name of the Bluetooth device')
+    parser.add_argument('--mac_address', type=str, help='MAC address of the Bluetooth device')
+    args = parser.parse_args()
 
-    for device in devices:
-        if "mac_address" not in device or "name" not in device:
-            raise ValueError("Each device in permitted_devices.json must have a mac_address and name.")
-        device["device_path"] = f"{bluez_hci0_path}dev_{device['mac_address'].replace(':', '_')}"
+    devices = []
+    if os.path.exists('permitted_devices.json'):
+        with open('permitted_devices.json', 'r') as file:
+            devices = json.load(file)
+
+    if args.name and args.mac_address:
+        device = {}
+        device["name"] = args.name
+        device["mac_address"] = args.mac_address
+        devices.append(device)
+    else:
+        parser.print_help()
+        exit(1)
 
     return devices
 
@@ -29,7 +39,7 @@ class BluetoothManager:
         self.bus = dbus.SystemBus()
         self.device_name = device["name"]
         self.device_address = device["mac_address"]
-        self.device_path = device["device_path"]
+        self.device_path = f"{bluez_hci0_path}dev_{self.device_address.replace(':', '_')}"
 
     def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -95,7 +105,14 @@ class BluetoothManager:
         except KeyboardInterrupt:
             loop.quit()
 
-if __name__ == "__main__":
-    for device in get_permitted_devices():
+async def main():
+    devices = get_devices()
+    tasks = []
+    for device in devices:
         bluetooth_manager = BluetoothManager(device)
-        bluetooth_manager.main()
+        task = asyncio.create_task(bluetooth_manager.main())
+        tasks.append(task)
+    await asyncio.gather(*tasks)
+
+if __name__ == "__main__":
+    asyncio.run(main())
