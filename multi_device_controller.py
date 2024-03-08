@@ -9,7 +9,6 @@ def get_devices():
     default_file = 'devices.json'
     parser = argparse.ArgumentParser()
     parser.add_argument('--file', help='Specify the JSON file to open', default=default_file)
-    parser.add_argument('-h', action='help', help='Show this help message and exit')
     args = parser.parse_args()
     file_path = args.file
 

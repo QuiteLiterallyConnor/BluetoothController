@@ -3,16 +3,14 @@ from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 import datetime
 
-DBusGMainLoop(set_as_default=True)
-bus = dbus.SystemBus()
-bluez_hci0_path = "/org/bluez/hci0/"
-
 class BluetoothManager:
     def __init__(self, device):
+        DBusGMainLoop(set_as_default=True)
+        self.bluez_hci0_path = "/org/bluez/hci0/"
         self.bus = dbus.SystemBus()
         self.device_name = device["name"]
         self.device_address = device["mac_address"]
-        self.device_path = f"{bluez_hci0_path}dev_{self.device_address.replace(':', '_')}"
+        self.device_path = f"{self.bluez_hci0_path}dev_{self.device_address.replace(':', '_')}"
 
     def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
