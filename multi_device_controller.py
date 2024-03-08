@@ -15,6 +15,14 @@ def get_devices():
     if os.path.exists(file_path):
         with open(file_path, 'r') as file:
             devices = json.load(file)
+    else:
+        print(f"File not found: {file_path}")
+        exit(1)
+
+    if len(devices) == 0:
+        print("No devices found in the file.")
+        exit(1)
+        
     return devices
 
 async def main():
