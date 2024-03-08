@@ -20,27 +20,8 @@ pip install -r requirements.txt
  You can run this program using the following command:
 
 ```python
-python main.py --name [DEVICE NAME] --mac_address [MAC ADDRESS]
+python device_controller.py --name [DEVICE NAME] --mac_address [MAC ADDRESS]
 ```
 
 
 Replace [DEVICE NAME] with the name of the device and [MAC ADDRESS] with the MAC address of the device.
-
-## Configuration
-
-You can configure the permitted devices by modifying the `devices.json` file. Each device in this file should have a `mac_address` and `name`.
-
-Here's an example of what this file might look like:
-
-```json
-[
-    {
-        "mac_address": "00:11:22:33:44:55",
-        "name": "My Phone"
-    },
-    {
-        "mac_address": "66:77:88:99:AA:BB",
-        "name": "My Tablet"
-    }
-]
-```
