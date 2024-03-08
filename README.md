@@ -28,7 +28,7 @@ Replace [DEVICE NAME] with the name of the device and [MAC ADDRESS] with the MAC
 
 ## Configuration
 
-You can configure the permitted devices by modifying the `permitted_devices.json` file. Each device in this file should have a `mac_address` and `name`.
+You can configure the permitted devices by modifying the `devices.json` file. Each device in this file should have a `mac_address` and `name`.
 
 Here's an example of what this file might look like:
 
