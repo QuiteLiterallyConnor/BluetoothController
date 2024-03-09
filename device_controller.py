@@ -7,6 +7,10 @@ def get_device():
     parser.add_argument("--mac_address", help="MAC address of the device")
     args = parser.parse_args()
 
+    if args.help:
+        parser.print_help()
+        exit()
+
     device = {
         "name": args.name,
         "mac_address": args.mac_address
