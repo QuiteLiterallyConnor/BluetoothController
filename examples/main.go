@@ -21,8 +21,11 @@ func main() {
 	bc.Start()
 
 	// Example of controlling a media player
-	err = bc.ControlMedia("Play", "00:1A:7D:DA:71:13")
-	if err != nil {
-		fmt.Println("Error controlling media:", err)
+	// err = bc.ControlMedia("Play", "MAC_ADDRESS")
+	// if err != nil {
+	// 	fmt.Println("Error controlling media:", err)
+	// }
+
+	for {
 	}
 }
