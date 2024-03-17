@@ -10,32 +10,31 @@ import (
 )
 
 var (
-	bluezDest    = "org.bluez"
-	deviceName   string
+	bluezDest   = "org.bluez"
+	deviceName  string
+	deviceMAC   string
 )
 
 func init() {
 	flag.StringVar(&deviceName, "name", "", "Name of the Bluetooth device")
+	flag.StringVar(&deviceMAC, "mac_address", "", "MAC address of the Bluetooth device")
 	flag.Parse()
 
-	if deviceName == "" {
-		fmt.Println("Device name must be specified using the -name flag.")
+	if deviceName == "" || deviceMAC == "" {
+		fmt.Println("Both device name and MAC address must be specified using the -name and -mac_address flags.")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 }
 
 func main() {
-	var deviceMAC, action string
-
-	fmt.Print("Enter the MAC address of the Bluetooth device (e.g., 00:11:22:33:44:55): ")
-	fmt.Scanln(&deviceMAC)
+	var action string
 
 	fmt.Print("Enter the action to perform (play or pause): ")
 	fmt.Scanln(&action)
 
-	deviceMAC = strings.ToUpper(strings.Replace(deviceMAC, ":", "_", -1))
-	mediaControlPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", deviceMAC)
+	deviceMACFormatted := strings.ToUpper(strings.Replace(deviceMAC, ":", "_", -1))
+	mediaControlPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", deviceMACFormatted)
 
 	conn, err := dbus.SystemBus()
 	if err != nil {
