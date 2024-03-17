@@ -61,7 +61,7 @@ func (bc *BluetoothController) ControlMedia(action string) error { // Adjusted t
 		return fmt.Errorf("failed to %s: %w", strings.ToLower(action), call.Err) // Error wrapping for better handling
 	}
 	fmt.Printf("%s action executed for %s\n", action, bc.DeviceName)
-	return nil // Success, no error
+	return nil
 }
 
 func main() {
@@ -72,7 +72,7 @@ func main() {
 
 	if deviceName == "" || deviceMAC == "" {
 		fmt.Println("Both -name and -mac_address flags must be specified.")
-		flag.PrintDefaults() // Print usage information
+		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
