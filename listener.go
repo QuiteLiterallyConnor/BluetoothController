@@ -88,4 +88,6 @@ func main() {
 
     go listenForPropertyChanges(conn)
     go listenForControlMedia(conn)
+
+    for {}
 }
