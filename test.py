@@ -1,37 +1,7 @@
 import dbus
+import pulsectl
 
-def get_media_player_object():
-    bus = dbus.SystemBus()
-    obj = bus.get_object('org.bluez', '/')
-    mgr = dbus.Interface(obj, 'org.freedesktop.DBus.ObjectManager')
-    for path, interfaces in mgr.GetManagedObjects().items():
-        if 'org.bluez.MediaPlayer1' in interfaces:
-            return dbus.Interface(bus.get_object('org.bluez', path), 'org.bluez.MediaPlayer1')
-    return None
-
-def play_pause():
-    player = get_media_player_object()
-    if player is None:
-        print("Media player not found. Make sure your device is connected.")
-        return
-    
-    try:
-        # Attempt to use PlayPause, if available
-        player.PlayPause()
-    except dbus.exceptions.DBusException as e:
-        # If PlayPause is not available, attempt to toggle between Play and Pause
-        print("PlayPause not supported, attempting alternate method...")
-        try:
-            # This is a simplified example; actual implementation may require checking state
-            player.Play()
-            print("Playback started")
-        except dbus.exceptions.DBusException:
-            try:
-                player.Pause()
-                print("Playback paused")
-            except dbus.exceptions.DBusException as e:
-                print(f"Error: {str(e)}")
-
+pulse = pulsectl.Pulse('avrcp-volume-control')
 
 def next_track():
     player = get_media_player_object()
@@ -47,15 +17,37 @@ def previous_track():
         return
     player.Previous()
 
-# Add interactive user input to call functions
+def get_media_player_object():
+    bus = dbus.SystemBus()
+    obj = bus.get_object('org.bluez', '/')
+    mgr = dbus.Interface(obj, 'org.freedesktop.DBus.ObjectManager')
+    for path, interfaces in mgr.GetManagedObjects().items():
+        if 'org.bluez.MediaPlayer1' in interfaces:
+            return dbus.Interface(bus.get_object('org.bluez', path), 'org.bluez.MediaPlayer1')
+    return None
+
+def volume_up():
+    sinks = pulse.sink_list()
+    for sink in sinks:
+        pulse.volume_change_all_chans(sink, 0.05)  # Increase volume by 5%
+        print("Volume increased.")
+
+def volume_down():
+    sinks = pulse.sink_list()
+    for sink in sinks:
+        pulse.volume_change_all_chans(sink, -0.05)  # Decrease volume by 5%
+        print("Volume decreased.")
+
 if __name__ == "__main__":
     while True:
         print("AVRCP Controller:")
         print("1. Play/Pause")
         print("2. Next Track")
         print("3. Previous Track")
-        print("4. Exit")
-        choice = input("Select an action (1-4): ")
+        print("4. Volume Up")
+        print("5. Volume Down")
+        print("6. Exit")
+        choice = input("Select an action (1-6): ")
 
         if choice == '1':
             play_pause()
@@ -64,7 +56,11 @@ if __name__ == "__main__":
         elif choice == '3':
             previous_track()
         elif choice == '4':
+            volume_up()
+        elif choice == '5':
+            volume_down()
+        elif choice == '6':
             print("Exiting...")
             break
         else:
-            print("Invalid choice. Please select a number between 1-4.")
+            print("Invalid choice. Please select a number between 1-6.")
