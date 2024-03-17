@@ -16,6 +16,8 @@ func main() {
 	}
 	defer conn.Close()
 
+	fmt.Println("Connected to session bus")
+
 	if err = conn.AddMatchSignal(
 		dbus.WithMatchObjectPath("/org/freedesktop/DBus"),
 		dbus.WithMatchInterface("org.freedesktop.DBus"),
