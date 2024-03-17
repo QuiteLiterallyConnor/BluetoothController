@@ -119,36 +119,36 @@ type Event struct {
 
 
 
-func functionThatPlaysOnReceivePause(value string) {
+func functionThatPlaysOnReceivePause() {
 	fmt.Println("Receive Pausing...")
 }
 
-func functionThatPlaysOnReceiveStop(value string) {
+func functionThatPlaysOnReceiveStop() {
 	fmt.Println("Receive Stopping...")
 }
 
-func functionThatPlaysOnReceivePlay(value string) {
+func functionThatPlaysOnReceivePlay() {
 	fmt.Println("Receive Playing...")
 }
 
-func functionThatPlaysOnReceiveNext(value string) {
+func functionThatPlaysOnReceiveNext() {
 	fmt.Println("Receive Next track...")
 }
 
-func functionThatPlaysOnReceivePrevious(value string) {
+func functionThatPlaysOnReceivePrevious() {
 	fmt.Println("Receive Previous track...")
 }
 
-func functionThatPlaysOnReceiveVolumeChange(value string) {
+func functionThatPlaysOnReceiveVolumeChange() {
 	fmt.Println("Receive Volume changed...")
 }
 
-func functionThatPlaysOnReceiveTrack(value string) {	
+func functionThatPlaysOnReceiveTrack() {	
 	fmt.Println("Receive Track changed...")
 }
 
-func functionThatPlaysOnReceivePosition(value string) {
-	fmt.Printf("Receive Position changed to: %v\n", value)
+func functionThatPlaysOnReceivePosition() {
+	fmt.Printf("Receive Position changed\n")
 }
 
 
