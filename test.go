@@ -26,6 +26,8 @@ func main() {
 		panic(err)
 	}
 
+	fmt,Println("Matched signal")
+
 	c := make(chan *dbus.Signal, 10)
 	conn.Signal(c)
 	for v := range c {
