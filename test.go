@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	deviceName  string
-	deviceMAC   string
+	deviceName string
+	deviceMAC  string
 )
 
 func init() {
@@ -29,11 +29,11 @@ func init() {
 func main() {
 	var action string
 
-	fmt.Print("Enter the action to perform (play or pause): ")
+	fmt.Print("Enter the action to perform (play, pause, next, previous): ")
 	fmt.Scanln(&action)
 
 	deviceMACFormatted := strings.ToUpper(strings.Replace(deviceMAC, ":", "_", -1))
-	mediaPlayerPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", deviceMACFormatted) // May need adjustment
+	mediaPlayerPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", deviceMACFormatted)
 
 	conn, err := dbus.SystemBus()
 	if err != nil {
@@ -42,12 +42,10 @@ func main() {
 	}
 
 	switch action {
-	case "play":
-		controlMedia(conn, mediaPlayerPath, "Play")
-	case "pause":
-		controlMedia(conn, mediaPlayerPath, "Pause")
+	case "play", "pause", "next", "previous":
+		controlMedia(conn, mediaPlayerPath, strings.Title(action))
 	default:
-		fmt.Println("Invalid action. Use 'play' or 'pause'")
+		fmt.Println("Invalid action. Use 'play', 'pause', 'next', or 'previous'")
 	}
 }
 
@@ -55,8 +53,8 @@ func controlMedia(conn *dbus.Conn, mediaPlayerPath, method string) {
 	mediaPlayer := conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
 	call := mediaPlayer.Call("org.bluez.MediaPlayer1."+method, 0)
 	if call.Err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to %s media: %s\n", strings.ToLower(method), call.Err)
+		fmt.Fprintf(os.Stderr, "Failed to %s: %s\n", strings.ToLower(method), call.Err)
 		return
 	}
-	fmt.Printf("%sback started for %s\n", strings.Title(strings.ToLower(method)), deviceName)
+	fmt.Printf("%s action executed for %s\n", method, deviceName)
 }
