@@ -11,6 +11,26 @@ class BluetoothManager:
         self.device_name = device["name"]
         self.device_address = device["mac_address"]
         self.device_path = f"{self.bluez_hci0_path}dev_{self.device_address.replace(':', '_')}"
+        self.media_control_path = f"{self.device_path}/player0"
+        self.media_control_interface = "org.bluez.MediaControl1"
+
+    def play_media(self):
+        try:
+            media_control_object = self.bus.get_object("org.bluez", self.media_control_path)
+            media_control = dbus.Interface(media_control_object, self.media_control_interface)
+            media_control.Play()
+            print("Playback started.")
+        except dbus.DBusException as e:
+            print(f"Failed to start playback: {e}")
+
+    def pause_media(self):
+        try:
+            media_control_object = self.bus.get_object("org.bluez", self.media_control_path)
+            media_control = dbus.Interface(media_control_object, self.media_control_interface)
+            media_control.Pause()
+            print("Playback paused.")
+        except dbus.DBusException as e:
+            print(f"Failed to pause playback: {e}")
 
     def on_properties_changed(self, interface, changed_properties, invalidated_properties, path=None):
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
