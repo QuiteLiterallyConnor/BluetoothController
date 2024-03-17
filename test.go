@@ -26,7 +26,7 @@ func main() {
 
     fmt.Println("Listening for PropertiesChanged signals...")
     for v := range c {
-        // Handle the signal
+		fmt.Printf("Received signal: %+v\n", v)
         onPropertiesChanged(v)
     }
 }
