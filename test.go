@@ -73,16 +73,39 @@ func controlMedia(conn *dbus.Conn, mediaPlayerPath, method string) {
 }
 
 func listenForPropertiesChanged(conn *dbus.Conn, mediaPlayerPath string, wg *sync.WaitGroup) {
-    defer wg.Done()
+	defer wg.Done() // Mark the listener as done when the function returns
 
-    matchRule := fmt.Sprintf("type='signal',interface='org.freedesktop.DBus.Properties',path='%s'", mediaPlayerPath)
-    conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0, matchRule)
+	mediaPlayer := conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
+	mediaPlayerIface := "org.freedesktop.DBus.Properties"
 
-    c := make(chan *dbus.Signal, 10)
-    conn.Signal(c)
+	// Add a match rule for PropertiesChanged signal
+	matchRule := fmt.Sprintf("type='signal',interface='%s',path='%s'", mediaPlayerIface, mediaPlayerPath)
+	err := conn.AddMatchSignal(matchRule)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to add match rule for PropertiesChanged signal: %s\n", err)
+		return
+	}
+	defer conn.RemoveMatchSignal(matchRule)
 
-    for range c { // Adjusted to ignore the variable 'v' since it's unused in this snippet.
-        // Example processing or print statement could go here.
-        // This loop will exit when the channel is closed.
+	// Listen for PropertiesChanged signals
+	ch := make(chan *dbus.Signal, 10)
+	conn.Signal(ch)
+	for signal := range ch {
+		if signal.Name == "org.freedesktop.DBus.Properties.PropertiesChanged" {
+			onPropertiesChanged(signal)
+		}
+	}
+}
+
+func onPropertiesChanged(signal *dbus.Signal) {
+    if len(signal.Body) >= 3 {
+        interfaceName := signal.Body[0].(string)
+        changedProperties := signal.Body[1].(map[string]dbus.Variant)
+        // invalidatedProperties := signal.Body[2] // Depending on your needs
+
+        fmt.Println("PropertiesChanged on interface:", interfaceName)
+        for propName, propValue := range changedProperties {
+            fmt.Printf("Property %s changed to %v\n", propName, propValue)
+        }
     }
 }
