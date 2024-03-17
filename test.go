@@ -40,11 +40,12 @@ func main() {
 	conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0,
 		"type='signal',interface='org.freedesktop.DBus.Properties',path='"+mediaPlayerPath+"',member='PropertiesChanged'")
 
-	c := make(chan *dbus.PropertiesChanged, 10)
+	c := make(chan *dbus.Signal, 10)
 	conn.Signal(c)
 
 	fmt.Println("Listening for property changes...")
 	for v := range c {
+		fmt.Printf("OMG WE GOT A SIGNAL (PROPERTY CHANGE!!!) :) :) :)\n")
 		handlePropertiesChanged(v)
 	}
 }
