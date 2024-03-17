@@ -47,6 +47,12 @@ func main() {
 	default:
 		fmt.Println("Invalid action. Use 'play', 'pause', 'next', or 'previous'")
 	}
+
+	listenForPropertiesChanged(conn, mediaPlayerPath)
+
+	// Block the main goroutine to keep listening for property changes.
+	fmt.Println("Press CTRL+C to exit.")
+	select {}
 }
 
 func controlMedia(conn *dbus.Conn, mediaPlayerPath, method string) {
@@ -57,4 +63,19 @@ func controlMedia(conn *dbus.Conn, mediaPlayerPath, method string) {
 		return
 	}
 	fmt.Printf("%s action executed for %s\n", method, deviceName)
+}
+
+func listenForPropertiesChanged(conn *dbus.Conn, mediaPlayerPath string) {
+	matchRule := fmt.Sprintf("type='signal',interface='org.freedesktop.DBus.Properties',path='%s'", mediaPlayerPath)
+	conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0, matchRule)
+
+	c := make(chan *dbus.Signal, 10)
+	conn.Signal(c)
+
+	go func() {
+		for v := range c {
+			fmt.Println("PropertiesChanged signal received:", v)
+			// You can further process the signal here as needed.
+		}
+	}()
 }
