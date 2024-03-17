@@ -69,8 +69,6 @@ func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
 	if len(signal.Body) >= 3 {
 		interfaceName := signal.Body[0].(string)
 		changedProperties := signal.Body[1].(map[string]dbus.Variant)
-
-		fmt.Println("PropertiesChanged on interface:", interfaceName)
 		for propName, propValue := range changedProperties {
 
 			fmt.Printf("Property %s changed to %v\n", propName, propValue)
