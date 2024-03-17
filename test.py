@@ -38,14 +38,14 @@ def previous_track():
 if __name__ == "__main__":
     while True:
         print("AVRCP Controller:")
-        print("1. Play/Pause")
+        print("1. Play")
         print("2. Next Track")
         print("3. Previous Track")
         print("4. Exit")
         choice = input("Select an action (1-4): ")
 
         if choice == '1':
-            play_pause()
+            play_media()
         elif choice == '2':
             next_track()
         elif choice == '3':
