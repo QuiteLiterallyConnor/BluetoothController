@@ -1,10 +1,10 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/godbus/dbus/v5"
@@ -18,24 +18,24 @@ type Event struct {
 }
 
 type BluetoothController struct {
-	DeviceName  string
-	DeviceMAC   string
-	Conn        *dbus.Conn
-	Listener    func(string, interface{}, reflect.Type)
-	Broadcaster func(string, interface{}, reflect.Type)
+	DeviceName       string
+	DeviceMacAddress string
+	Conn             *dbus.Conn
+	Listener         func(string, string, interface{}, reflect.Type)
+	Broadcaster      func(string, interface{}, reflect.Type)
 }
 
-func NewBluetoothController(deviceName, deviceMAC string, listener func(string, interface{}, reflect.Type)) (*BluetoothController, error) {
+// TODO: Add overloading such that NewBluetoothController can be called with or without the device_name and device_address parameters
+
+func NewBluetoothController(listener func(string, string, interface{}, reflect.Type)) (*BluetoothController, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SystemBus: %w", err)
 	}
 
 	return &BluetoothController{
-		DeviceName: deviceName,
-		DeviceMAC:  deviceMAC,
-		Conn:       conn,
-		Listener:   listener,
+		Conn:     conn,
+		Listener: listener,
 	}, nil
 
 }
@@ -62,22 +62,32 @@ func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
 		return
 	}
 
-	fmt.Printf("signal.Sender: %+v\n", signal.Sender)
+	mac_address := bc.extractMACAddress(string(signal.Path))
 
-	changedProperties := signal.Body[1].(map[string]dbus.Variant)
-
-	for name, prop := range changedProperties {
+	for event_name, prop := range signal.Body[1].(map[string]dbus.Variant) {
 		value := prop.Value()
 		typeof := reflect.TypeOf(prop.Value())
 
-		fmt.Printf("name: %+v	value: %+v	typeof: %+v\n", name, value, typeof)
-		bc.Listener(name, value, typeof)
+		fmt.Printf("sender address: %v		name: %+v	value: %+v	typeof: %+v\n", mac_address, event_name, value, typeof)
+		bc.Listener(mac_address, event_name, value, typeof)
 	}
 }
 
-func (bc *BluetoothController) ControlMedia(action string) error { // Adjusted to return an error
-	deviceMACFormatted := strings.ToUpper(strings.Replace(bc.DeviceMAC, ":", "_", -1))
-	mediaPlayerPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", deviceMACFormatted)
+func (bc *BluetoothController) extractMACAddress(input string) (match string) {
+	pattern := `([0-9A-Fa-f]{2}_[0-9A-Fa-f]{2}_[0-9A-Fa-f]{2}_[0-9A-Fa-f]{2}_[0-9A-Fa-f]{2}_[0-9A-Fa-f]{2})`
+	re, _ := regexp.Compile(pattern)
+	if match = re.FindString(input); match == "" {
+		return "Unknown"
+	}
+	return strings.Replace(match, "_", ":", -1)
+}
+
+func (bc *BluetoothController) ControlMedia(action, mac_address string) error { // Adjusted to return an error
+	mac_address = strings.Replace(mac_address, ":", "_", -1)
+	fmt.Printf("action: %v 	mac_address: %v\n", action, mac_address)
+	mediaPlayerPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", mac_address)
+
+	fmt.Printf("mediaPlayerPath: %v\n", mediaPlayerPath)
 
 	mediaPlayer := bc.Conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
 	call := mediaPlayer.Call("org.bluez.MediaPlayer1."+action, 0)
@@ -90,43 +100,44 @@ func (bc *BluetoothController) ControlMedia(action string) error { // Adjusted t
 	return nil
 }
 
-func functionListen(name string, value interface{}, typeof reflect.Type) {
-	fmt.Printf("Listener - Name: %v		Value: %v		Typeof: %v\n", name, value, typeof)
+func functionListen(device_address, command_name string, value interface{}, typeof reflect.Type) {
+	fmt.Printf("device_address: %v		command_name: %v		value: %v		typeof: %v\n", device_address, command_name, value, typeof)
 }
 
 func listenForCommand(bc *BluetoothController) {
 	for {
-		var action string
-		fmt.Scanln(&action)
-		action = strings.TrimSpace(action)
+		var input string
+		fmt.Scanln(&input)
+		input = strings.TrimSpace(input)
 
-		if action == "exit" {
+		if input == "exit" {
 			break
 		}
 
-		if err := bc.ControlMedia(action); err != nil {
+		parts := strings.Split(input, "::")
+		if len(parts) != 2 {
+			fmt.Fprintf(os.Stderr, "Invalid input format. Expected format is 'NAME:ADDRESS'.\n")
+			continue
+		}
+
+		name := parts[0]
+		address := parts[1]
+
+		fmt.Printf("Command: %s, Address: %s\n", name, address)
+
+		if err := bc.ControlMedia(name, address); err != nil {
 			fmt.Fprintf(os.Stderr, "Error controlling media: %s\n", err)
 		}
 	}
 }
 
 func main() {
-	var deviceName, deviceMAC string
-	flag.StringVar(&deviceName, "name", "", "Name of the Bluetooth device")
-	flag.StringVar(&deviceMAC, "mac_address", "", "MAC address of the Bluetooth device")
-	flag.Parse()
-
-	if deviceName == "" || deviceMAC == "" {
-		fmt.Println("Both -name and -mac_address flags must be specified.")
-		flag.PrintDefaults()
-		os.Exit(1)
-	}
-
-	bc, err := NewBluetoothController(deviceName, deviceMAC, functionListen)
+	bc, err := NewBluetoothController(functionListen)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error initializing BluetoothController: %s\n", err)
 		os.Exit(1)
 	}
+
 	bc.Start()
 
 	listenForCommand(bc)
