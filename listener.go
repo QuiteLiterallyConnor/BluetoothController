@@ -55,18 +55,20 @@ func onPropertiesChanged(signal *dbus.Signal) {
 func listenForControlMedia(conn *dbus.Conn) {
     var action string
 
-	fmt.Print("Enter the action to perform (play, pause, next, previous): ")
-	fmt.Scanln(&action)
+    for {
+        fmt.Print("Enter the action to perform (play, pause, next, previous): ")
+        fmt.Scanln(&action)
 
-	deviceMACFormatted := strings.ToUpper(strings.Replace(deviceMAC, ":", "_", -1))
-	mediaPlayerPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", deviceMACFormatted)
+        deviceMACFormatted := strings.ToUpper(strings.Replace(deviceMAC, ":", "_", -1))
+        mediaPlayerPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", deviceMACFormatted)
 
-	switch action {
-	case "play", "pause", "next", "previous":
-		controlMedia(conn, mediaPlayerPath, strings.Title(action))
-	default:
-		fmt.Println("Invalid action. Use 'play', 'pause', 'next', or 'previous'")
-	}
+        switch action {
+        case "play", "pause", "next", "previous":
+            controlMedia(conn, mediaPlayerPath, strings.Title(action))
+        default:
+            fmt.Println("Invalid action. Use 'play', 'pause', 'next', or 'previous'")
+        }
+    }
 }
 
 func controlMedia(conn *dbus.Conn, mediaPlayerPath, method string) {
