@@ -7,14 +7,21 @@ import (
     "github.com/godbus/dbus/v5"
 )
 
-func main() {
-    conn, err := dbus.SystemBus()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Failed to connect to SystemBus: %s\n", err)
-        os.Exit(1)
-    }
+var (
+	deviceName string
+	deviceMAC  string
+)
 
-    go listenForPropertyChanges(conn)
+func init() {
+	flag.StringVar(&deviceName, "name", "", "Name of the Bluetooth device")
+	flag.StringVar(&deviceMAC, "mac_address", "", "MAC address of the Bluetooth device")
+	flag.Parse()
+
+	if deviceName == "" || deviceMAC == "" {
+		fmt.Println("Both device name and MAC address must be specified using the -name and -mac_address flags.")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
 }
 
 func listenForPropertyChanges(conn *dbus.Conn) {
@@ -51,4 +58,14 @@ func controlMedia(conn *dbus.Conn, mediaPlayerPath, method string) {
 		return
 	}
 	fmt.Printf("%s action executed for %s\n", method, deviceName)
+}
+
+func main() {
+    conn, err := dbus.SystemBus()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Failed to connect to SystemBus: %s\n", err)
+        os.Exit(1)
+    }
+
+    go listenForPropertyChanges(conn)
 }
