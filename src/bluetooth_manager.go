@@ -62,3 +62,41 @@ func (bc *BluetoothController) ControlMedia(action string) {
 	}
 	fmt.Printf("%s action executed for %s\n", action, bc.DeviceName)
 }
+
+func main() {
+	var deviceName, deviceMAC string
+	flag.StringVar(&deviceName, "name", "", "Name of the Bluetooth device")
+	flag.StringVar(&deviceMAC, "mac_address", "", "MAC address of the Bluetooth device")
+	flag.Parse()
+
+	// Check if both the device name and MAC address have been provided
+	if deviceName == "" || deviceMAC == "" {
+		fmt.Println("Both -name and -mac_address flags must be specified.")
+		flag.PrintDefaults() // Print usage information
+		os.Exit(1)
+	}
+
+	bc, err := NewBluetoothController(deviceName, deviceMAC)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error initializing BluetoothController: %s\n", err)
+		return
+	}
+
+	go bc.ListenForPropertyChanges()
+
+	// Example: Control the device with a hard-coded action
+	fmt.Println("Enter 'play', 'pause', 'next', 'previous' to control the device, or 'exit' to quit:")
+	for {
+		var action string
+		fmt.Scanln(&action)
+		action = strings.TrimSpace(action)
+
+		if action == "exit" {
+			break
+		}
+
+		if err := bc.ControlMedia(action); err != nil {
+			fmt.Fprintf(os.Stderr, "Error controlling media: %s\n", err)
+		}
+	}
+}
