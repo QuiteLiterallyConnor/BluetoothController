@@ -14,7 +14,7 @@ func main() {
         os.Exit(1)
     }
 
-    listenForPropertyChanges(conn)
+    go listenForPropertyChanges(conn)
 }
 
 func listenForPropertyChanges(conn *dbus.Conn) {
@@ -41,4 +41,14 @@ func onPropertiesChanged(signal *dbus.Signal) {
             fmt.Printf("Property %s changed to %v\n", propName, propValue)
         }
     }
+}
+
+func controlMedia(conn *dbus.Conn, mediaPlayerPath, method string) {
+	mediaPlayer := conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
+	call := mediaPlayer.Call("org.bluez.MediaPlayer1."+method, 0)
+	if call.Err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to %s: %s\n", strings.ToLower(method), call.Err)
+		return
+	}
+	fmt.Printf("%s action executed for %s\n", method, deviceName)
 }

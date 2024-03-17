@@ -58,15 +58,3 @@ func controlMedia(conn *dbus.Conn, mediaPlayerPath, method string) {
 	}
 	fmt.Printf("%s action executed for %s\n", method, deviceName)
 }
-
-func onPropertiesChanged(signal *dbus.Signal) {
-    if len(signal.Body) >= 3 {
-        interfaceName := signal.Body[0].(string)
-        changedProperties := signal.Body[1].(map[string]dbus.Variant)
-
-        fmt.Println("PropertiesChanged on interface:", interfaceName)
-        for propName, propValue := range changedProperties {
-            fmt.Printf("Property %s changed to %v\n", propName, propValue)
-        }
-    }
-}
