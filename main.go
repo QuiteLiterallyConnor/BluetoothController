@@ -67,7 +67,7 @@ func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
 
 	changedProperties := signal.Body[1].(map[string]dbus.Variant)
 
-	fmt.Printf("changedProperties (dbus.Variant): %v\n", changedProperties)
+	fmt.Printf("changedProperties (dbus.Variant): %+v\n", changedProperties)
 
 	for propName, _ := range changedProperties {
 		if event, exists := bc.Listeners[propName]; exists {
