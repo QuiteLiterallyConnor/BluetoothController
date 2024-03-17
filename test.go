@@ -72,28 +72,9 @@ func controlMedia(conn *dbus.Conn, mediaPlayerPath, method string) {
     fmt.Printf("%s action executed for %s\n", method, deviceName)
 }
 
-func listenForPropertiesChanged(conn *dbus.Conn, mediaPlayerPath string, wg *sync.WaitGroup) {
-	defer wg.Done() // Mark the listener as done when the function returns
-
-	mediaPlayer := conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
-	mediaPlayerIface := "org.freedesktop.DBus.Properties"
-
-	// Add a match rule for PropertiesChanged signal
-	matchRule := fmt.Sprintf("type='signal',interface='%s',path='%s'", mediaPlayerIface, mediaPlayerPath)
-	err := conn.AddMatchSignal(matchRule)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to add match rule for PropertiesChanged signal: %s\n", err)
-		return
-	}
-	defer conn.RemoveMatchSignal(matchRule)
-
-	// Listen for PropertiesChanged signals
-	ch := make(chan *dbus.Signal, 10)
-	conn.Signal(ch)
-	for signal := range ch {
-		if signal.Name == "org.freedesktop.DBus.Properties.PropertiesChanged" {
-			onPropertiesChanged(signal)
-		}
+func listenForPropertiesChanged(chan signal) {
+	for v := range c {
+		onPropertiesChanged(v)
 	}
 }
 
