@@ -4,47 +4,44 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/godbus/dbus/v5"
 )
-type BluetoothController struct {
-	DeviceName 	string
-	DeviceMAC  	string
-	Conn       	*dbus.Conn
-	Listeners 	map[string]Event
-	Broadcaster map[string]Event
+
+type Event struct {
+	Name     string
+	Value    interface{}
+	TypeOf   reflect.Type
+	Function func(value interface{})
 }
 
-func NewBluetoothController(deviceName, deviceMAC string, listeners, receivers []Event) (*BluetoothController, error) {
+type BluetoothController struct {
+	DeviceName  string
+	DeviceMAC   string
+	Conn        *dbus.Conn
+	Listener    func(string, interface{}, reflect.Type)
+	Broadcaster func(string, interface{}, reflect.Type)
+}
+
+func NewBluetoothController(deviceName, deviceMAC string, listener func(string, interface{}, reflect.Type)) (*BluetoothController, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SystemBus: %w", err)
 	}
 
-	listenerMap := make(map[string]Event)
-	for _, event := range listeners {
-		listenerMap[event.Name] = event
-	}
-
-	broadcasterMap := make(map[string]Event)
-	for _, event := range receivers {
-		broadcasterMap[event.Name] = event
-	}
-
 	return &BluetoothController{
-		DeviceName: 	deviceName,
-		DeviceMAC:  	deviceMAC,
-		Conn:       	conn,
-		Listeners:  	listenerMap,
-		Broadcaster:	broadcasterMap,
+		DeviceName: deviceName,
+		DeviceMAC:  deviceMAC,
+		Conn:       conn,
+		Listener:   listener,
 	}, nil
 
 }
 
 func (bc *BluetoothController) Start() {
-	go bc.listenForControlMedia()
-	bc.ListenForPropertyChanges()
+	go bc.ListenForPropertyChanges()
 }
 
 func (bc *BluetoothController) ListenForPropertyChanges() {
@@ -61,33 +58,43 @@ func (bc *BluetoothController) ListenForPropertyChanges() {
 }
 
 func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
-    if len(signal.Body) < 3 {
+	if len(signal.Body) < 3 {
 		return
-    }
+	}
 
-	fmt.Printf("signal: %+v\n", signal)
-	fmt.Printf("signal.Body: %+v\n", signal.Body)
+	fmt.Printf("signal.Sender: %+v\n", signal.Sender)
 
 	changedProperties := signal.Body[1].(map[string]dbus.Variant)
 
-	fmt.Printf("changedProperties (dbus.Variant): %+v\n", changedProperties)
+	for name, prop := range changedProperties {
+		value := prop.Value()
+		typeof := reflect.TypeOf(prop.Value())
 
-	for propName, prop := range changedProperties {
-		fmt.Printf("	dbus.Variant prop: %+v\n", prop)
-		// fmt.Printf("	dbus.Variant format: %+v\n", prop.format())
-		// fmt.Printf("	dbus.Variant prop.getType: %+v\n", prop.getType())
-		// fmt.Printf("	dbus.Variant prop.getValue: %+v\n", prop.getValue())
-		// fmt.Printf("	dbus.Variant prop.toString: %+v\n", prop.toString())
-
-		if event, exists := bc.Listeners[propName]; exists {
-			// Call the function associated with propName, ignoring propValue for now
-			event.Function()
-		}
+		fmt.Printf("name: %+v	value: %+v	typeof: %+v\n", name, value, typeof)
+		bc.Listener(name, value, typeof)
 	}
 }
 
+func (bc *BluetoothController) ControlMedia(action string) error { // Adjusted to return an error
+	deviceMACFormatted := strings.ToUpper(strings.Replace(bc.DeviceMAC, ":", "_", -1))
+	mediaPlayerPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", deviceMACFormatted)
 
-func (bc *BluetoothController) listenForControlMedia() {
+	mediaPlayer := bc.Conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
+	call := mediaPlayer.Call("org.bluez.MediaPlayer1."+action, 0)
+	if call.Err != nil {
+		return fmt.Errorf("failed to %s: %w", strings.ToLower(action), call.Err) // Error wrapping for better handling
+	}
+
+	fmt.Printf("%s action executed for %s\n", action, bc.DeviceName)
+
+	return nil
+}
+
+func functionListen(name string, value interface{}, typeof reflect.Type) {
+	fmt.Printf("Listener - Name: %v		Value: %v		Typeof: %v\n", name, value, typeof)
+}
+
+func listenForCommand(bc *BluetoothController) {
 	for {
 		var action string
 		fmt.Scanln(&action)
@@ -103,122 +110,25 @@ func (bc *BluetoothController) listenForControlMedia() {
 	}
 }
 
-func (bc *BluetoothController) ControlMedia(action string) error { // Adjusted to return an error
-	deviceMACFormatted := strings.ToUpper(strings.Replace(bc.DeviceMAC, ":", "_", -1))
-	mediaPlayerPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", deviceMACFormatted)
+func main() {
+	var deviceName, deviceMAC string
+	flag.StringVar(&deviceName, "name", "", "Name of the Bluetooth device")
+	flag.StringVar(&deviceMAC, "mac_address", "", "MAC address of the Bluetooth device")
+	flag.Parse()
 
-	mediaPlayer := bc.Conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
-	call := mediaPlayer.Call("org.bluez.MediaPlayer1."+strings.Title(action), 0)
-	if call.Err != nil {
-		return fmt.Errorf("failed to %s: %w", strings.ToLower(action), call.Err) // Error wrapping for better handling
+	if deviceName == "" || deviceMAC == "" {
+		fmt.Println("Both -name and -mac_address flags must be specified.")
+		flag.PrintDefaults()
+		os.Exit(1)
 	}
 
-	fmt.Printf("%s action executed for %s\n", action, bc.DeviceName)
+	bc, err := NewBluetoothController(deviceName, deviceMAC, functionListen)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error initializing BluetoothController: %s\n", err)
+		os.Exit(1)
+	}
+	bc.Start()
 
+	listenForCommand(bc)
 
-
-	return nil
-}
-
-
-type Event struct {
-	Name 		string
-	Function 	func()
-}
-
-func functionThatPlaysOnReceivePause() {
-	fmt.Println("Receive Pausing...")
-}
-
-func functionThatPlaysOnReceiveStop() {
-	fmt.Println("Receive Stopping...")
-}
-
-func functionThatPlaysOnReceivePlay() {
-	fmt.Println("Receive Playing...")
-}
-
-func functionThatPlaysOnReceiveNext() {
-	fmt.Println("Receive Next track...")
-}
-
-func functionThatPlaysOnReceivePrevious() {
-	fmt.Println("Receive Previous track...")
-}
-
-func functionThatPlaysOnReceiveVolumeChange() {
-	fmt.Println("Receive Volume changed...")
-}
-
-func functionThatPlaysOnReceiveTrack() {	
-	fmt.Println("Receive Track changed...")
-}
-
-func functionThatPlaysOnReceivePosition() {
-	fmt.Printf("Receive Position changed\n")
-}
-
-
-
-///
-
-
-func functionThatPlaysOnSendPause() {
-	fmt.Println("Sending Pausing...")
-}
-
-func functionThatPlaysOnSendStop() {
-	fmt.Println("Sending Stopping...")
-}
-
-func functionThatPlaysOnSendPlay() {
-	fmt.Println("Sending Playing...")
-}
-
-func functionThatPlaysOnSendNext() {
-	fmt.Println("Sending Playing next track...")
-}
-
-func functionThatPlaysOnSendPrevious() {
-	fmt.Println("Sending Playing previous track...")
-}
-
-
-func main() {
-    var deviceName, deviceMAC string
-    flag.StringVar(&deviceName, "name", "", "Name of the Bluetooth device")
-    flag.StringVar(&deviceMAC, "mac_address", "", "MAC address of the Bluetooth device")
-    flag.Parse()
-
-    if deviceName == "" || deviceMAC == "" {
-        fmt.Println("Both -name and -mac_address flags must be specified.")
-        flag.PrintDefaults()
-        os.Exit(1)
-    }
-
-    listeners := []Event{
-        {"Pause", functionThatPlaysOnReceivePause},
-        {"Stop", functionThatPlaysOnReceiveStop},
-        {"Play", functionThatPlaysOnReceivePlay},
-        {"Next", functionThatPlaysOnReceiveNext},
-        {"Previous", functionThatPlaysOnReceivePrevious},
-        {"VolumeChange", functionThatPlaysOnReceiveVolumeChange},
-        {"Track", functionThatPlaysOnReceiveTrack},
-    }
-
-    broadcasters := []Event{
-        {"Pause", functionThatPlaysOnSendPause},
-        {"Stop", functionThatPlaysOnSendStop},
-        {"Play", functionThatPlaysOnSendPlay},
-        {"Next", functionThatPlaysOnSendNext},
-        {"Previous", functionThatPlaysOnSendPrevious},
-    }
-
-    bc, err := NewBluetoothController(deviceName, deviceMAC, listeners, broadcasters)
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error initializing BluetoothController: %s\n", err)
-        os.Exit(1)
-    }
-
-    bc.Start()
 }

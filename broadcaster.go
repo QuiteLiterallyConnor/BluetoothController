@@ -26,7 +26,7 @@ func init() {
 	}
 }
 
-func main() {
+func main_2() {
 	var action string
 
 	fmt.Print("Enter the action to perform (play, pause, next, previous): ")
