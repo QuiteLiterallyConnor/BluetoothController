@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -9,14 +10,23 @@ import (
 )
 
 var (
-	bluezDest = "org.bluez"
+	bluezDest    = "org.bluez"
+	deviceName   string
 )
 
-func main() {
-	var deviceName, deviceMAC, action string
+func init() {
+	flag.StringVar(&deviceName, "name", "", "Name of the Bluetooth device")
+	flag.Parse()
 
-	fmt.Print("Enter the name of the Bluetooth device: ")
-	fmt.Scanln(&deviceName)
+	if deviceName == "" {
+		fmt.Println("Device name must be specified using the -name flag.")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+}
+
+func main() {
+	var deviceMAC, action string
 
 	fmt.Print("Enter the MAC address of the Bluetooth device (e.g., 00:11:22:33:44:55): ")
 	fmt.Scanln(&deviceMAC)
@@ -49,7 +59,7 @@ func playMedia(conn *dbus.Conn, mediaControlPath string) {
 		fmt.Fprintf(os.Stderr, "Failed to play media: %s\n", call.Err)
 		return
 	}
-	fmt.Println("Playback started.")
+	fmt.Println("Playback started for", deviceName)
 }
 
 func pauseMedia(conn *dbus.Conn, mediaControlPath string) {
@@ -58,5 +68,5 @@ func pauseMedia(conn *dbus.Conn, mediaControlPath string) {
 		fmt.Fprintf(os.Stderr, "Failed to pause media: %s\n", call.Err)
 		return
 	}
-	fmt.Println("Playback paused.")
+	fmt.Println("Playback paused for", deviceName)
 }
