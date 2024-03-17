@@ -1,36 +1,45 @@
 package main
 
 import (
-	"fmt"
-	"os"
+    "fmt"
+    "os"
 
-	"github.com/godbus/dbus/v5"
+    "github.com/godbus/dbus/v5"
 )
 
 func main() {
-	fmt.Println("Hello, World!")
-	conn, err := dbus.ConnectSessionBus()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to connect to session bus:", err)
-		os.Exit(1)
-	}
-	defer conn.Close()
+    conn, err := dbus.SystemBus()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Failed to connect to SystemBus: %s\n", err)
+        os.Exit(1)
+    }
 
-	fmt.Println("Connected to session bus")
+    // Setup the match rule for listening to PropertiesChanged signals
+    // You might need to adjust the rule based on your specific needs,
+    // for example, by specifying a particular object path or interface.
+    matchRule := "type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'"
+    conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0, matchRule)
 
-	if err = conn.AddMatchSignal(
-		dbus.WithMatchObjectPath("/org/freedesktop/DBus"),
-		dbus.WithMatchInterface("org.freedesktop.DBus"),
-		dbus.WithMatchSender("org.freedesktop.DBus"),
-	); err != nil {
-		panic(err)
-	}
+    // Create a channel to receive signals
+    c := make(chan *dbus.Signal, 10)
+    conn.Signal(c)
 
-	fmt.Println("Matched signal")
+    fmt.Println("Listening for PropertiesChanged signals...")
+    for v := range c {
+        // Handle the signal
+        onPropertiesChanged(v)
+    }
+}
 
-	c := make(chan *dbus.Signal, 10)
-	conn.Signal(c)
-	for v := range c {
-		fmt.Println(v)
-	}
+func onPropertiesChanged(signal *dbus.Signal) {
+    if len(signal.Body) >= 3 {
+        interfaceName := signal.Body[0].(string)
+        changedProperties := signal.Body[1].(map[string]dbus.Variant)
+        // invalidatedProperties := signal.Body[2] // Depending on your needs
+
+        fmt.Println("PropertiesChanged on interface:", interfaceName)
+        for propName, propValue := range changedProperties {
+            fmt.Printf("Property %s changed to %v\n", propName, propValue)
+        }
+    }
 }
