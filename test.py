@@ -14,7 +14,24 @@ def play_pause():
     if player is None:
         print("Media player not found. Make sure your device is connected.")
         return
-    player.PlayPause()
+    
+    try:
+        # Attempt to use PlayPause, if available
+        player.PlayPause()
+    except dbus.exceptions.DBusException as e:
+        # If PlayPause is not available, attempt to toggle between Play and Pause
+        print("PlayPause not supported, attempting alternate method...")
+        try:
+            # This is a simplified example; actual implementation may require checking state
+            player.Play()
+            print("Playback started")
+        except dbus.exceptions.DBusException:
+            try:
+                player.Pause()
+                print("Playback paused")
+            except dbus.exceptions.DBusException as e:
+                print(f"Error: {str(e)}")
+
 
 def next_track():
     player = get_media_player_object()
