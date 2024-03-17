@@ -43,7 +43,6 @@ func main() {
 
     go listenForPropertiesChanged(conn, mediaPlayerPath, &wg)
 
-    // Replace the previous action prompt with a loop that allows continuous command input
     reader := bufio.NewReader(os.Stdin)
     for {
         fmt.Print("Enter command (play, pause, next, previous, quit): ")
@@ -55,20 +54,24 @@ func main() {
             break
         }
 
-        switch command {
-        case "play", "pause", "next", "previous":
-            controlMedia(conn, mediaPlayerPath, strings.Title(command))
-        default:
-            fmt.Println("Invalid command. Use 'play', 'pause', 'next', 'previous', or 'quit'")
-        }
+        controlMedia(conn, mediaPlayerPath, strings.Title(command))
     }
 
+    // Inform the properties changed listener to stop and wait for it
+    wg.Done() // Mark the listener as done
     wg.Wait() // Wait for the listener goroutine to finish
 }
 
-// Updated controlMedia function as previously defined
+func controlMedia(conn *dbus.Conn, mediaPlayerPath, method string) {
+    mediaPlayer := conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
+    call := mediaPlayer.Call("org.bluez.MediaPlayer1."+method, 0)
+    if call.Err != nil {
+        fmt.Fprintf(os.Stderr, "Failed to %s: %s\n", strings.ToLower(method), call.Err)
+        return
+    }
+    fmt.Printf("%s action executed for %s\n", method, deviceName)
+}
 
-// Updated listenForPropertiesChanged function with a WaitGroup parameter
 func listenForPropertiesChanged(conn *dbus.Conn, mediaPlayerPath string, wg *sync.WaitGroup) {
     defer wg.Done()
 
@@ -78,8 +81,8 @@ func listenForPropertiesChanged(conn *dbus.Conn, mediaPlayerPath string, wg *syn
     c := make(chan *dbus.Signal, 10)
     conn.Signal(c)
 
-    for v := range c {
-        // Process the signal here
-        // Break loop or return if a "quit" condition is met, if necessary
+    for range c { // Adjusted to ignore the variable 'v' since it's unused in this snippet.
+        // Example processing or print statement could go here.
+        // This loop will exit when the channel is closed.
     }
 }
