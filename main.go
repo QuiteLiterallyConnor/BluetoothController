@@ -71,10 +71,10 @@ func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
 
 	for propName, prop := range changedProperties {
 		fmt.Printf("	dbus.Variant prop: %+v\n", prop)
-		fmt.Printf("	dbus.Variant prop.getSig: %+v\n", prop.getSig())
-		fmt.Printf("	dbus.Variant prop.getType: %+v\n", prop.getType())
-		fmt.Printf("	dbus.Variant prop.getValue: %+v\n", prop.getValue())
-		fmt.Printf("	dbus.Variant prop.toString: %+v\n", prop.toString())
+		// fmt.Printf("	dbus.Variant prop.getSig: %+v\n", prop.getSig())
+		// fmt.Printf("	dbus.Variant prop.getType: %+v\n", prop.getType())
+		// fmt.Printf("	dbus.Variant prop.getValue: %+v\n", prop.getValue())
+		// fmt.Printf("	dbus.Variant prop.toString: %+v\n", prop.toString())
 
 		if event, exists := bc.Listeners[propName]; exists {
 			// Call the function associated with propName, ignoring propValue for now
