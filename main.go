@@ -65,6 +65,9 @@ func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
 		return
     }
 
+	fmt.Printf("signal: %+v\n", signal)
+	fmt.Printf("signal.Body: %+v\n", signal.Body)
+
 	changedProperties := signal.Body[1].(map[string]dbus.Variant)
 
 	fmt.Printf("changedProperties (dbus.Variant): %+v\n", changedProperties)
