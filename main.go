@@ -72,7 +72,7 @@ func main() {
 
 	if deviceName == "" || deviceMAC == "" {
 		fmt.Println("Both -name and -mac_address flags must be specified.")
-		flag.PrintDefaults()
+		flag.PrintDefaults() // Print usage information
 		os.Exit(1)
 	}
 
