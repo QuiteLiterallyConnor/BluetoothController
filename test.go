@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/godbus/dbus/v5"
 )
@@ -27,13 +28,8 @@ func init() {
 }
 
 func main() {
-	var action string
-
-	fmt.Print("Enter the action to perform (play, pause, next, previous): ")
-	fmt.Scanln(&action)
-
 	deviceMACFormatted := strings.ToUpper(strings.Replace(deviceMAC, ":", "_", -1))
-	mediaPlayerPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", deviceMACFormatted)
+	mediaPlayerPath := fmt.Sprintf("/org/bluez/hci0/dev_%s", deviceMACFormatted)
 
 	conn, err := dbus.SystemBus()
 	if err != nil {
@@ -41,20 +37,49 @@ func main() {
 		os.Exit(1)
 	}
 
-	switch action {
-	case "play", "pause", "next", "previous":
-		controlMedia(conn, mediaPlayerPath, strings.Title(action))
-	default:
-		fmt.Println("Invalid action. Use 'play', 'pause', 'next', or 'previous'")
+	// Listen for properties changed signal
+	conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0,
+		"type='signal',interface='org.freedesktop.DBus.Properties',path='"+mediaPlayerPath+"',member='PropertiesChanged'")
+
+	c := make(chan *dbus.Signal, 10)
+	conn.Signal(c)
+
+	fmt.Println("Listening for property changes...")
+	for v := range c {
+		handlePropertiesChanged(v)
 	}
 }
 
-func controlMedia(conn *dbus.Conn, mediaPlayerPath, method string) {
-	mediaPlayer := conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
-	call := mediaPlayer.Call("org.bluez.MediaPlayer1."+method, 0)
-	if call.Err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to %s: %s\n", strings.ToLower(method), call.Err)
+func handlePropertiesChanged(signal *dbus.Signal) {
+	if len(signal.Body) < 3 {
 		return
 	}
-	fmt.Printf("%s action executed for %s\n", method, deviceName)
+
+	interfaceName, ok := signal.Body[0].(string)
+	if !ok || interfaceName != "org.bluez.MediaPlayer1" {
+		return
+	}
+
+	changedProperties, ok := signal.Body[1].(map[string]dbus.Variant)
+	if !ok {
+		return
+	}
+
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
+	for property, value := range changedProperties {
+		switch property {
+		case "Volume":
+			fmt.Printf("[%s] %s Volume Changed: %v\n", timestamp, deviceName, value.Value())
+		case "Status":
+			fmt.Printf("[%s] %s Playback Status Changed: %v\n", timestamp, deviceName, value.Value())
+		case "Track":
+			trackInfo, ok := value.Value().(map[string]dbus.Variant)
+			if !ok {
+				return
+			}
+			title, _ := trackInfo["Title"].Value().(string)
+			artist, _ := trackInfo["Artist"].Value().(string)
+			fmt.Printf("[%s] %s Now Playing: %s by %s\n", timestamp, deviceName, title, artist)
+		}
+	}
 }
