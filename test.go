@@ -37,7 +37,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Listen for properties changed signal
 	conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0,
 		"type='signal',interface='org.freedesktop.DBus.Properties',path='"+mediaPlayerPath+"',member='PropertiesChanged'")
 
