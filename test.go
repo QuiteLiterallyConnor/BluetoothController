@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	fmt.Println("Hello, World!")
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to connect to session bus:", err)
