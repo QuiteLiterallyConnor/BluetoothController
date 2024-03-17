@@ -9,6 +9,10 @@ def get_media_player_object():
             return dbus.Interface(bus.get_object('org.bluez', path), 'org.bluez.MediaPlayer1')
     return None
 
+def pause_media():
+    player = get_media_player_object()
+    player.Pause()
+
 def play_media():
     player = get_media_player_object()
     player.Play()
@@ -38,13 +42,16 @@ def previous_track():
 if __name__ == "__main__":
     while True:
         print("AVRCP Controller:")
+        print("0. Pause")
         print("1. Play")
         print("2. Next Track")
         print("3. Previous Track")
         print("4. Exit")
         choice = input("Select an action (1-4): ")
 
-        if choice == '1':
+        if choice == '0':
+            pause_media()
+        elif choice == '1':
             play_media()
         elif choice == '2':
             next_track()
