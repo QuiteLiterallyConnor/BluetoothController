@@ -1,12 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/godbus/dbus/v5"
 )
-
 type BluetoothController struct {
 	DeviceName string
 	DeviceMAC  string
@@ -50,29 +51,51 @@ func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
 	}
 }
 
-func (bc *BluetoothController) ControlMedia(action string) {
-	fmt.Printf("controlMedia: %s\n", action)
+func (bc *BluetoothController) ControlMedia(action string) error { // Adjusted to return an error
 	deviceMACFormatted := strings.ToUpper(strings.Replace(bc.DeviceMAC, ":", "_", -1))
 	mediaPlayerPath := fmt.Sprintf("/org/bluez/hci0/dev_%s/player0", deviceMACFormatted)
 
 	mediaPlayer := bc.Conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
 	call := mediaPlayer.Call("org.bluez.MediaPlayer1."+strings.Title(action), 0)
 	if call.Err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to %s: %s\n", strings.ToLower(action), call.Err)
-		return
+		return fmt.Errorf("failed to %s: %w", strings.ToLower(action), call.Err) // Error wrapping for better handling
 	}
 	fmt.Printf("%s action executed for %s\n", action, bc.DeviceName)
+	return nil // Success, no error
 }
 
-
 func main() {
-	bluetootheventlistener = BluetoothController{}
-	bc, err := bluetootheventlistener.NewBluetoothController("Pixel_6", "0C:C4:13:12:67:62")
+	var deviceName, deviceMAC string
+	flag.StringVar(&deviceName, "name", "", "Name of the Bluetooth device")
+	flag.StringVar(&deviceMAC, "mac_address", "", "MAC address of the Bluetooth device")
+	flag.Parse()
+
+	if deviceName == "" || deviceMAC == "" {
+		fmt.Println("Both -name and -mac_address flags must be specified.")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
+	bc, err := NewBluetoothController(deviceName, deviceMAC)
 	if err != nil {
-		fmt.Println("Error creating BluetoothController:", err)
+		fmt.Fprintf(os.Stderr, "Error initializing BluetoothController: %s\n", err)
 		return
 	}
 
 	go bc.ListenForPropertyChanges()
-	bc.ControlMedia("play")
+
+	fmt.Println("Enter 'play', 'pause', 'next', 'previous' to control the device, or 'exit' to quit:")
+	for {
+		var action string
+		fmt.Scanln(&action)
+		action = strings.TrimSpace(action)
+
+		if action == "exit" {
+			break
+		}
+
+		if err := bc.ControlMedia(action); err != nil {
+			fmt.Fprintf(os.Stderr, "Error controlling media: %s\n", err)
+		}
+	}
 }
