@@ -47,9 +47,9 @@ func NewBluetoothController(deviceName, deviceMAC string, listeners, receivers [
 
 }
 
-func (bs *BluetoothController) Start() {
+func (bc *BluetoothController) Start() {
 	go bc.listenForControlMedia()
-	bs.ListenForPropertyChanges()
+	bc.ListenForPropertyChanges()
 }
 
 func (bc *BluetoothController) ListenForPropertyChanges() {
@@ -90,7 +90,7 @@ func (bc *BluetoothController) listenForControlMedia() {
 			break
 		}
 
-		if err := ControlMedia(action); err != nil {
+		if err := bc.ControlMedia(action); err != nil {
 			fmt.Fprintf(os.Stderr, "Error controlling media: %s\n", err)
 		}
 	}
