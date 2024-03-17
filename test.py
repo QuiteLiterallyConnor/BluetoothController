@@ -9,24 +9,9 @@ def get_media_player_object():
             return dbus.Interface(bus.get_object('org.bluez', path), 'org.bluez.MediaPlayer1')
     return None
 
-def play_pause():
+def play_media():
     player = get_media_player_object()
-    if player is None:
-        print("Media player not found. Make sure your device is connected.")
-        return
-    try:
-        player.PlayPause()
-    except dbus.exceptions.DBusException as e:
-        print("PlayPause not supported, attempting alternate method...")
-        try:
-            player.Play()
-            print("Playback started")
-        except dbus.exceptions.DBusException:
-            try:
-                player.Pause()
-                print("Playback paused")
-            except dbus.exceptions.DBusException as e:
-                print(f"Error: {str(e)}")
+    player.Play()
 
 def next_track():
     player = get_media_player_object()
