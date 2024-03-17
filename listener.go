@@ -14,6 +14,10 @@ func main() {
         os.Exit(1)
     }
 
+    listenForPropertyChanges(conn)
+}
+
+func listenForPropertyChanges(conn *dbus.Conn) {
     matchRule := "type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'"
     conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0, matchRule)
 
@@ -24,6 +28,7 @@ func main() {
     for v := range c {
         onPropertiesChanged(v)
     }
+
 }
 
 func onPropertiesChanged(signal *dbus.Signal) {
