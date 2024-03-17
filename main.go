@@ -16,11 +16,6 @@ type BluetoothController struct {
 	Broadcaster map[string]Event
 }
 
-type Event struct {
-	Name 		string
-	Function 	func()
-}
-
 func NewBluetoothController(deviceName, deviceMAC string, listeners, receivers []Event) (*BluetoothController, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
@@ -66,17 +61,22 @@ func (bc *BluetoothController) ListenForPropertyChanges() {
 }
 
 func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
-	if len(signal.Body) >= 3 {
-		// interfaceName := signal.Body[0].(string)
-		changedProperties := signal.Body[1].(map[string]dbus.Variant)
-		for propName, propValue := range changedProperties {
+    if len(signal.Body) < 3 {
+		return
+    }
 
-			fmt.Printf("Property %s changed to %v\n", propName, propValue)
+	changedProperties := signal.Body[1].(map[string]dbus.Variant)
 
-			// bc.Listeners[propName].Function()
+	fmt.Printf("changedProperties (dbus.Variant): %v\n", changedProperties)
+
+	for propName, _ := range changedProperties {
+		if event, exists := bc.Listeners[propName]; exists {
+			// Call the function associated with propName, ignoring propValue for now
+			event.Function()
 		}
 	}
 }
+
 
 func (bc *BluetoothController) listenForControlMedia() {
 	for {
@@ -111,32 +111,44 @@ func (bc *BluetoothController) ControlMedia(action string) error { // Adjusted t
 	return nil
 }
 
-func functionThatPlaysOnReceivePause() {
+
+type Event struct {
+	Name 		string
+	Function 	func()
+}
+
+
+
+func functionThatPlaysOnReceivePause(value string) {
 	fmt.Println("Receive Pausing...")
 }
 
-func functionThatPlaysOnReceiveStop() {
+func functionThatPlaysOnReceiveStop(value string) {
 	fmt.Println("Receive Stopping...")
 }
 
-func functionThatPlaysOnReceivePlay() {
+func functionThatPlaysOnReceivePlay(value string) {
 	fmt.Println("Receive Playing...")
 }
 
-func functionThatPlaysOnReceiveNext() {
+func functionThatPlaysOnReceiveNext(value string) {
 	fmt.Println("Receive Next track...")
 }
 
-func functionThatPlaysOnReceivePrevious() {
+func functionThatPlaysOnReceivePrevious(value string) {
 	fmt.Println("Receive Previous track...")
 }
 
-func functionThatPlaysOnReceiveVolumeChange() {
+func functionThatPlaysOnReceiveVolumeChange(value string) {
 	fmt.Println("Receive Volume changed...")
 }
 
-func functionThatPlaysOnReceiveTrack() {	
+func functionThatPlaysOnReceiveTrack(value string) {	
 	fmt.Println("Receive Track changed...")
+}
+
+func functionThatPlaysOnReceivePosition(value string) {
+	fmt.Printf("Receive Position changed to: %v\n", value)
 }
 
 
