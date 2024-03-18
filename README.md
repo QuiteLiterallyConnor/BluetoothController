@@ -1,28 +1,43 @@
-# Bluetooth Controller
+# Bluetooth Manager
 
-This package provides a Go-based solution for controlling Bluetooth devices, specifically focusing on media control functionalities such as Play, Pause, and Stop.
+This package provides functionality to VERY SIMPLE control and scan Bluetooth devices. It includes the following main components:
 
-## Features
+- `BluetoothController`: This component is responsible for controlling Bluetooth devices. It provides functions to connect, disconnect, and manage Bluetooth devices. It can also send AVRCP commands to the device, such as play, pause, next, previous, etc
 
-- Listen for `PropertiesChanged` signals from Bluetooth devices
-- Control media playback on Bluetooth devices that support the `org.bluez.MediaPlayer1` interface
-- Display RSSI (Received Signal Strength Indicator) values for connected devices
-
-## Installation
-
-Ensure you have Go installed on your machine. Then, clone this repository and navigate to the project directory:
-
-```bash
-git clone https://github.com/QuiteLiterallyConnor/BluetoothController.git
-cd BluetoothController
-```
+- `BluetoothScanner`: This component is responsible for scanning for nearby Bluetooth devices. It provides functions to start and stop scanning, and to retrieve the list of discovered devices.
 
 ## Usage
 
-An example implementation can be found in `examples`
+To use this package, you need to import it in your Go code:
 
-## Troubleshooting
+```go
+import "path/to/bluetoothmanager"
+```
 
-Q: Does my device support dbus/gdbus?
-    A: Using dbus-send: dbus-send --system --print-reply --dest=org.bluez /org/bluez/hci0/dev_YOUR_DEVICE_MAC_ADDRESS org.freedesktop.DBus.Introspectable.Introspect
-       Using gdbus:     gdbus introspect --system --dest org.bluez --object-path /org/bluez/hci0/dev_YOUR_DEVICE_MAC_ADDRESS
+Then, you can create a new BluetoothController or BluetoothScanner:
+
+```go
+controller, err := bluetoothmanager.NewBluetoothController()
+if err != nil {
+    // handle error
+}
+
+scanner, err := bluetoothmanager.NewBluetoothScanner()
+if err != nil {
+    // handle error
+}
+```
+
+You can then use the methods provided by these objects to control and scan Bluetooth devices.
+
+## Examples
+Examples of how to use this package can be found in the examples directory. These examples demonstrate how to use the BluetoothController and BluetoothScanner to perform common tasks.
+
+## Testing
+This package includes unit tests. To run the tests, navigate to the package directory and run "go test"
+
+## Contributing
+Contributions to this package are welcome. Please submit a pull request or open an issue if you have any improvements or suggestions.
+
+## License
+This package is licensed under the MIT License. See the LICENSE file for more details.
