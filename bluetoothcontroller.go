@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	"github.com/godbus/dbus/v5"
 )
 
 type BluetoothController struct {
-	Adapter     dbus.BusObject
-	AdapterPath dbus.ObjectPath
-	Conn        *dbus.Conn
-	Listener    func(string, string, interface{}, reflect.Type)
+	Adapter      dbus.BusObject
+	AdapterPath  dbus.ObjectPath
+	Conn         *dbus.Conn
+	Listener     func(Event)
+	ActiveDevice Device
 }
 
-func NewBluetoothController(listener func(string, string, interface{}, reflect.Type)) (*BluetoothController, error) {
+func NewBluetoothController(listener func(Event)) (*BluetoothController, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SystemBus: %w", err)
@@ -47,16 +47,14 @@ func (bc *BluetoothController) ListenForPropertyChanges() {
 }
 
 func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
-	PrintDebug(fmt.Sprintf("Received signal: %v", signal))
 	if len(signal.Body) < 3 {
 		return
 	}
 	mac_address := extractMACAddress(string(signal.Path))
 	for event_name, prop := range signal.Body[1].(map[string]dbus.Variant) {
-		value := prop.Value()
-		typeof := reflect.TypeOf(prop.Value())
-		PrintDebug(fmt.Sprintf("MAC: %s, Event: %s, Value: %v, Type: %v", mac_address, event_name, value, typeof))
-		bc.Listener(mac_address, event_name, value, typeof)
+		var e Event
+		e.ParseEvent(event_name, mac_address, prop)
+		bc.Listener(e)
 	}
 }
 

@@ -2,24 +2,28 @@ package bluetoothmanager
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/godbus/dbus/v5"
 )
 
 type BluetoothScanner struct {
-	Conn    *dbus.Conn
-	Devices map[string]Device
+	Conn     *dbus.Conn
+	Devices  map[string]Device
+	Listener func(Device)
 }
 
-func NewBluetoothScanner() (*BluetoothScanner, error) {
+func NewBluetoothScanner(listener func(Device)) (*BluetoothScanner, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SystemBus: %w", err)
 	}
 
 	return &BluetoothScanner{
-		Conn:    conn,
-		Devices: make(map[string]Device),
+		Conn:     conn,
+		Devices:  make(map[string]Device),
+		Listener: listener,
 	}, nil
 }
 
@@ -44,51 +48,53 @@ func (bs *BluetoothScanner) GetManagedDevices() error {
 		if !found {
 			continue
 		}
-		device := parseDevice(path, props)
-		bs.Devices[device.Name] = device
+		var d Device
+		if valid := d.ParseDevice(path, props); valid {
+			bs.Listener(d)
+			bs.Devices[d.MacAddress] = d
+		}
 	}
 
 	return nil
 }
 
-func (bs *BluetoothScanner) ListenForDevices() {
-	PrintDebug("Listening for devices")
-	matchRule := "type='signal',interface='org.freedesktop.DBus.ObjectManager',member='InterfacesAdded',sender='org.bluez'"
-	call := bs.Conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0, matchRule)
-	if call.Err != nil {
-		fmt.Printf("Error adding D-Bus match rule: %s\n", call.Err)
-		return
+func (bs *BluetoothScanner) StartScanner() (err error) {
+	adapterPath := dbus.ObjectPath(filepath.Join(string(os.PathSeparator), "org", "bluez", "hci0"))
+	signals := make(chan *dbus.Signal, 10)
+	bs.Conn.Signal(signals)
+
+	matchRule := "type='signal',interface='org.freedesktop.DBus.ObjectManager',member='InterfacesAdded'"
+	if call := bs.Conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0, matchRule); call.Err != nil {
+		return call.Err
 	}
 
-	signalChan := make(chan *dbus.Signal, 10)
-	bs.Conn.Signal(signalChan)
+	adapter := bs.Conn.Object("org.bluez", adapterPath)
+	err = adapter.Call("org.bluez.Adapter1.StartDiscovery", 0).Store()
+	if err != nil {
+		return err
+	}
+	PrintDebug("Scanning for devices...")
+	go bs.HandleSignals(signals)
 
-	go func() {
-		for signal := range signalChan {
-			fmt.Printf("signal: %+v\n", signal)
-
-			if signal.Name != "org.freedesktop.DBus.ObjectManager.InterfacesAdded" {
-				continue
-			}
-			if path, props, ok := parseInterfacesAddedSignal(signal); ok {
-				device := parseDevice(path, props["org.bluez.Device1"])
-				bs.Devices[device.Name] = device
-			}
-		}
-	}()
+	return nil
 }
 
-func parseInterfacesAddedSignal(signal *dbus.Signal) (dbus.ObjectPath, map[string]map[string]dbus.Variant, bool) {
-	if len(signal.Body) < 2 {
-		return "", nil, false
+func (bs *BluetoothScanner) HandleSignals(signals chan *dbus.Signal) {
+	for signal := range signals {
+		bs.HandleSignal(signal)
 	}
+}
 
-	path, ok1 := signal.Body[0].(dbus.ObjectPath)
-	properties, ok2 := signal.Body[1].(map[string]map[string]dbus.Variant)
-
-	if !ok1 || !ok2 {
-		return "", nil, false
+func (bs *BluetoothScanner) HandleSignal(signal *dbus.Signal) {
+	if signal.Name != "org.freedesktop.DBus.ObjectManager.InterfacesAdded" {
+		return
 	}
-
-	return path, properties, true
+	path, properties := signal.Body[0].(dbus.ObjectPath), signal.Body[1].(map[string]map[string]dbus.Variant)
+	for _, props := range properties {
+		var d Device
+		if valid := d.ParseDevice(path, props); valid {
+			bs.Listener(d)
+			bs.Devices[d.MacAddress] = d
+		}
+	}
 }
