@@ -67,7 +67,7 @@ func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
 func (bc *BluetoothController) ControlMedia(action, mac_address string) error {
 	mac_address = strings.Replace(mac_address, ":", "_", -1)
 	mediaPlayerPath := filepath.Join(string(bc.AdapterPath), fmt.Sprintf("dev_%s", mac_address), "player0")
-	fmt.Printf("mediaPlayerPath: %v\n", mediaPlayerPath)
+	PrintDebug(fmt.Sprintf("mediaPlayerPath: %v\n", mediaPlayerPath))
 	mediaPlayer := bc.Conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
 	PrintDebug(fmt.Sprintf("Calling %s on %s", action, mediaPlayerPath))
 	if call := mediaPlayer.Call("org.bluez.MediaPlayer1."+action, 0); call.Err != nil {
@@ -141,4 +141,21 @@ func (bc *BluetoothController) getMediaPlayerProperties(devicePath dbus.ObjectPa
 	var properties map[string]dbus.Variant
 	err := mediaPlayer.Call("org.freedesktop.DBus.Properties.GetAll", 0, "org.bluez.MediaPlayer1").Store(&properties)
 	return properties, err
+}
+
+func (bc *BluetoothController) ConnectToDevice(device Device) error {
+	conn, err := dbus.SystemBus()
+	if err != nil {
+		return fmt.Errorf("connecting to D-Bus system bus failed: %w", err)
+	}
+
+	obj := conn.Object("org.bluez", dbus.ObjectPath(device.AdapterPath))
+
+	call := obj.Call("org.bluez.Device1.Connect", 0)
+	if call.Err != nil {
+		return fmt.Errorf("connecting to the Bluetooth device failed: %w", call.Err)
+	}
+
+	PrintDebug("Connected successfully")
+	return nil
 }

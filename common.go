@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/godbus/dbus/v5"
 )
@@ -66,6 +67,52 @@ func (d *Device) ParseDevice(path dbus.ObjectPath, props map[string]dbus.Variant
 	}
 
 	return
+}
+
+func (d *Device) Connect() error {
+	if d.Connected {
+		return nil
+	}
+
+	if !d.Paired {
+		return nil
+	}
+
+	if err := d.ConnectToDevice(); err != nil {
+		return fmt.Errorf("failed to establish connection: %w", err)
+	}
+
+	timeout := time.After(10 * time.Second)
+	tick := time.Tick(500 * time.Millisecond)
+
+	for {
+		select {
+		case <-timeout:
+			return fmt.Errorf("connection timeout")
+		case <-tick:
+			if d.Connected {
+				fmt.Println("Connected successfully.")
+				return nil
+			}
+		}
+	}
+}
+
+func (d *Device) ConnectToDevice() error {
+	conn, err := dbus.SystemBus()
+	if err != nil {
+		return fmt.Errorf("connecting to D-Bus system bus failed: %w", err)
+	}
+
+	obj := conn.Object("org.bluez", dbus.ObjectPath(d.AdapterPath))
+
+	call := obj.Call("org.bluez.Device1.Connect", 0)
+	if call.Err != nil {
+		return fmt.Errorf("connecting to the Bluetooth device failed: %w", call.Err)
+	}
+
+	PrintDebug("Connected successfully")
+	return nil
 }
 
 type Event struct {
