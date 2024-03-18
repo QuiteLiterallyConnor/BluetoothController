@@ -31,6 +31,10 @@ func NewBluetoothController(listener func(Event)) (*BluetoothController, error) 
 	}, nil
 }
 
+func (bc *BluetoothController) GetActiveDevice() Device {
+	return bc.ActiveDevice
+}
+
 func (bc *BluetoothController) StartController() {
 	go bc.ListenForPropertyChanges()
 }
@@ -47,6 +51,8 @@ func (bc *BluetoothController) ListenForPropertyChanges() {
 }
 
 func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
+	bc.UpdateActiveDevice()
+
 	if len(signal.Body) < 3 {
 		return
 	}
@@ -68,4 +74,71 @@ func (bc *BluetoothController) ControlMedia(action, mac_address string) error {
 		return fmt.Errorf("failed to %s: %w", strings.ToLower(action), call.Err)
 	}
 	return nil
+}
+
+func (bc *BluetoothController) UpdateActiveDevice() error {
+	devicePaths, err := bc.getConnectedDevices()
+	if err != nil {
+		return err
+	}
+
+	for _, devicePath := range devicePaths {
+		deviceProps, err := bc.getDeviceProperties(devicePath)
+		if err != nil {
+			PrintDebug(fmt.Sprintf("Error getting properties for device %s: %v", devicePath, err))
+			continue
+		}
+
+		var device Device
+		if !(device.ParseDevice(devicePath, deviceProps) && device.Connected) {
+			continue
+		}
+
+		mediaPlayerProps, err := bc.getMediaPlayerProperties(devicePath)
+		if err != nil {
+			continue
+		}
+		status, exists := mediaPlayerProps["Status"]
+		if exists && status.Value().(string) == "playing" {
+			bc.ActiveDevice = device
+			PrintDebug("Active device updated: " + device.MacAddress)
+			return nil
+		}
+	}
+
+	return fmt.Errorf("no active playing device found")
+}
+
+func (bc *BluetoothController) getConnectedDevices() ([]dbus.ObjectPath, error) {
+	var connectedDevices []dbus.ObjectPath
+	managedObjects := make(map[dbus.ObjectPath]map[string]map[string]dbus.Variant)
+	if err := bc.Conn.Object("org.bluez", "/").Call("org.freedesktop.DBus.ObjectManager.GetManagedObjects", 0).Store(&managedObjects); err != nil {
+		return nil, fmt.Errorf("failed to get managed objects: %w", err)
+	}
+	for path, interfaces := range managedObjects {
+		deviceProps, exists := interfaces["org.bluez.Device1"]
+		if !exists {
+			continue
+		}
+
+		if connected, ok := deviceProps["Connected"]; ok && connected.Value().(bool) {
+			connectedDevices = append(connectedDevices, path)
+		}
+	}
+	return connectedDevices, nil
+}
+
+func (bc *BluetoothController) getDeviceProperties(devicePath dbus.ObjectPath) (map[string]dbus.Variant, error) {
+	device := bc.Conn.Object("org.bluez", devicePath)
+	var properties map[string]dbus.Variant
+	err := device.Call("org.freedesktop.DBus.Properties.GetAll", 0, "org.bluez.Device1").Store(&properties)
+	return properties, err
+}
+
+func (bc *BluetoothController) getMediaPlayerProperties(devicePath dbus.ObjectPath) (map[string]dbus.Variant, error) {
+	mediaPlayerPath := filepath.Join(string(devicePath), "player0")
+	mediaPlayer := bc.Conn.Object("org.bluez", dbus.ObjectPath(mediaPlayerPath))
+	var properties map[string]dbus.Variant
+	err := mediaPlayer.Call("org.freedesktop.DBus.Properties.GetAll", 0, "org.bluez.MediaPlayer1").Store(&properties)
+	return properties, err
 }
