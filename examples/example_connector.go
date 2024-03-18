@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	bt "github.com/QuiteLiterallyConnor/BluetoothController"
+	bt "github.com/QuiteLiterallyConnor/BluetoothManager"
 )
 
 func connector() {

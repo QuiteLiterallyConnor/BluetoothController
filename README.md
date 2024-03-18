@@ -11,7 +11,7 @@ This package provides functionality to VERY SIMPLE control and scan Bluetooth de
 To use this package, you need to import it in your Go code:
 
 ```go
-import "path/to/bluetoothmanager"
+import "github.com/QuiteLiterallyConnor/BluetoothManager"
 ```
 
 Then, you can create a new BluetoothController or BluetoothScanner:
