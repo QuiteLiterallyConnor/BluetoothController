@@ -40,25 +40,32 @@ func (bc *BluetoothController) StartController() {
 }
 
 func (bc *BluetoothController) ListenForPropertyChanges() {
+	fmt.Printf("ListenForPropertyChanges TAG!!!")
 	PrintDebug("Listening for property changes")
 	matchRule := "type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'"
 	bc.Conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0, matchRule)
 	c := make(chan *dbus.Signal, 10)
 	bc.Conn.Signal(c)
 	for v := range c {
+		fmt.Printf("ListenForPropertyChanges TAG22222!!!")
 		bc.onPropertiesChanged(v)
 	}
 }
 
 func (bc *BluetoothController) onPropertiesChanged(signal *dbus.Signal) {
+	fmt.Printf("onPeopertiesChanges TAG!!!")
+
 	bc.UpdateActiveDevice()
 
 	if len(signal.Body) < 3 {
 		return
 	}
+	fmt.Printf("onPeopertiesChanges TAG AGAIN!!!")
+
 	mac_address := extractMACAddress(string(signal.Path))
 	for event_name, prop := range signal.Body[1].(map[string]dbus.Variant) {
 		var e Event
+		fmt.Printf("!!!! EVENT_NAME: %+v\n", event_name)
 		e.ParseEvent(event_name, mac_address, prop)
 		bc.Listener(e)
 	}
