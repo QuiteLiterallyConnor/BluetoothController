@@ -34,11 +34,11 @@ var ControllerListener = func(event bt.Event) {
 	case "Volume":
 		message = fmt.Sprintf(`{"type": "volume", "value": %v}`, event.Value)
 	case "Track":
-		message = fmt.Sprintf(`{"type": "Track", "value": %v}`, event.Value)
+		message = fmt.Sprintf(`{"type": "track", "value": %v}`, event.Value)
 	}
 
 	if message != "" {
-		broadcastToClients(event.JsonString())
+		broadcastToClients(event.Json())
 	}
 }
 

@@ -131,7 +131,7 @@ func (e *Event) ParseEvent(event_name, address string, prop dbus.Variant) {
 	fmt.Printf("PROP VALUE!!!!!!!: %+v\n", prop.Value())
 }
 
-func (e *Event) JsonString() string {
+func (e *Event) Json() string {
 	jsonString, _ := json.Marshal(e)
 	return string(jsonString)
 }
