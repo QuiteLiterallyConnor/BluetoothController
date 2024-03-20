@@ -7,7 +7,7 @@ import (
 )
 
 var ScannerListener = func(device bt.Device) {
-	fmt.Printf("Mac: %s, Device: %+v\n", device.MacAddress, device)
+	fmt.Printf("SCANNER LISTENER | EVERYWHERE Mac: %s, Device: %+v\n", device.MacAddress, device)
 }
 
 func scanner() {

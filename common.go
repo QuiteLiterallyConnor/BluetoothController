@@ -1,6 +1,7 @@
 package bluetoothmanager
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -118,7 +119,7 @@ func (d *Device) ConnectToDevice() error {
 type Event struct {
 	Device    string
 	Category  string
-	Value     interface{}
+	Value     string
 	ValueType reflect.Type
 }
 
@@ -126,8 +127,13 @@ func (e *Event) ParseEvent(event_name, address string, prop dbus.Variant) {
 	e.Device = extractMACAddress(address)
 	e.Category = event_name
 	e.ValueType = reflect.TypeOf(prop.Value())
-	e.Value = prop.Value()
-	return
+	e.Value = prop.String()
+	fmt.Printf("PROP VALUE!!!!!!!: %+v\n", prop.Value())
+}
+
+func (e *Event) Json() string {
+	jsonString, _ := json.Marshal(e)
+	return string(jsonString)
 }
 
 func EnableDebugging() {
