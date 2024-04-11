@@ -1,5 +1,5 @@
-github.com/QuiteLiterallyConnor/BluetoothManager v0.0.0-20240318062711-ea938798fa73 h1:oHW8ri9IW/NJ7zKfi2fDZ7iTP7mJ78vIok/OxeRq7GU=
-github.com/QuiteLiterallyConnor/BluetoothManager v0.0.0-20240318062711-ea938798fa73/go.mod h1:pn0tffYsC+EhimmHYWdJMxObuKMKJliPcFDCJyyKP9A=
+github.com/QuiteLiterallyConnor/BluetoothManager v0.0.0-20240320172800-3a7db9211b53 h1:NQ9vIjTvpZylczxWEBIlpgppRm1y9BG1eSDO+yOvs7c=
+github.com/QuiteLiterallyConnor/BluetoothManager v0.0.0-20240320172800-3a7db9211b53/go.mod h1:pn0tffYsC+EhimmHYWdJMxObuKMKJliPcFDCJyyKP9A=
 github.com/bytedance/sonic v1.5.0/go.mod h1:ED5hyg4y6t3/9Ku1R6dU/4KyJ48DZ4jPhfY1O2AihPM=
 github.com/bytedance/sonic v1.9.1 h1:6iJ6NqdoxCDr6mbY8h18oSO+cShGSMRGCEo7F2h0x8s=
 github.com/bytedance/sonic v1.9.1/go.mod h1:i736AoUSYt75HyZLoJW9ERYxcy6eaN6h4BZXU064P/U=
@@ -24,8 +24,6 @@ github.com/go-playground/validator/v10 v10.14.0 h1:vgvQWe3XCz3gIeFDm/HnTIbj6UGmg
 github.com/go-playground/validator/v10 v10.14.0/go.mod h1:9iXMNT7sEkjXb0I+enO7QXmzG6QCsPWY4zveKFVRSyU=
 github.com/goccy/go-json v0.10.2 h1:CrxCmQqYDkv1z7lO7Wbh2HN93uovUHgrECaO5ZrCXAU=
 github.com/goccy/go-json v0.10.2/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
-github.com/godbus/dbus v4.1.0+incompatible h1:WqqLRTsQic3apZUK9qC5sGNfXthmPXzUZ7nQPrNITa4=
-github.com/godbus/dbus v4.1.0+incompatible/go.mod h1:/YcGZj5zSblfDWMMoOzV4fas9FZnQYTkDnsGvmh2Grw=
 github.com/godbus/dbus/v5 v5.1.0 h1:4KLkAxT3aOY8Li4FRJe/KvhoNFFxo0m6fNuFUO8QJUk=
 github.com/godbus/dbus/v5 v5.1.0/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=

@@ -3,9 +3,8 @@ module server.go
 go 1.18
 
 require (
-	github.com/QuiteLiterallyConnor/BluetoothManager v0.0.0-20240318062711-ea938798fa73
+	github.com/QuiteLiterallyConnor/BluetoothManager v0.0.0-20240320172800-3a7db9211b53
 	github.com/gin-gonic/gin v1.9.1
-	github.com/godbus/dbus v4.1.0+incompatible
 	github.com/gorilla/websocket v1.5.1
 )
 

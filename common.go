@@ -128,7 +128,6 @@ func (e *Event) ParseEvent(event_name, address string, prop dbus.Variant) {
 	e.Category = event_name
 	e.ValueType = reflect.TypeOf(prop.Value())
 	e.Value = prop.String()
-	fmt.Printf("PROP VALUE!!!!!!!: %+v\n", prop.Value())
 }
 
 func (e *Event) Json() string {

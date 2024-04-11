@@ -7,8 +7,10 @@ import (
 	"os"
 	"reflect"
 	"sync"
+	"time"
 
 	bt "github.com/QuiteLiterallyConnor/BluetoothManager"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -17,15 +19,21 @@ var wsupgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow connections from any origin
+		return true
 	},
 }
 
 var clients = make(map[*websocket.Conn]bool)
 var mutex = &sync.Mutex{}
 
+type MediaPlayer struct {
+	Name     string
+	Duration time.Time
+	Position time.Time
+}
+
 var ControllerListener = func(event bt.Event) {
-	fmt.Printf("CONTROLLER LISTENER | Device: %s, Event_Name: %s, Value: %v, Type: %v\n", event.Device, event.Category, event.Value, event.ValueType)
+	fmt.Printf("CONTROLLER LISTENER | Device: %s, Event_Name: %s, Value: %+v, Type: %v\n", event.Device, event.Category, event.Value, event.ValueType)
 
 	var message string
 	switch event.Category {
@@ -38,13 +46,13 @@ var ControllerListener = func(event bt.Event) {
 	}
 
 	if message != "" {
-		broadcastToClients(event.Json())
+		broadcastToClients(event.Json("controller"))
 	}
 }
 
 var ScannerListener = func(device bt.Device) {
 	fmt.Printf("Scanner LISTENER | Device: %s, Data: %+v, DataType: %v\n\n", device.MacAddress, device, reflect.TypeOf(device))
-	broadcastToClients(fmt.Sprintf("Scanner Device - Mac: %s, Device: %+v\n", device.MacAddress, device))
+
 }
 
 var (
