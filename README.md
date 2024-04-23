@@ -1,6 +1,6 @@
 # Bluetooth Manager
 
-This package provides functionality to VERY SIMPLE control and scan Bluetooth devices. It includes the following main components:
+This package provides functionality to VERY SIMPLY control and scan Bluetooth devices. It includes the following main components:
 
 - `BluetoothController`: This component is responsible for controlling Bluetooth devices. It provides functions to connect, disconnect, and manage Bluetooth devices. It can also send AVRCP commands to the device, such as play, pause, next, previous, etc
 
